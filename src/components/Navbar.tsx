@@ -8,8 +8,8 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useDebounce, searchProductsSmart } from "@/lib/smartSearch";
 
 const SEARCH_HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -44,6 +44,7 @@ const SearchInputBox = ({
   setShowDropdown,
   showDropdown,
   suggestions,
+  isFetching,
   handleSubmit,
   wrapperRef,
   navigate,
@@ -136,6 +137,27 @@ const SearchInputBox = ({
         </div>
       </form>
 
+      {/* Loading indicator when typing */}
+      {showDropdown && isFetching && suggestions.length === 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-[100] p-4 text-center">
+          <p className="text-xs text-slate-500 animate-pulse font-semibold">
+            {language === "bn" ? "ওষুধ খোঁজা হচ্ছে..." : "Searching medicines..."}
+          </p>
+        </div>
+      )}
+
+      {/* No results notice */}
+      {showDropdown && !isFetching && suggestions.length === 0 && query.trim().length >= 1 && (
+        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-[100] p-4 text-center">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            "{query}" এর সাথে কোনো ওষুধ মেলেনি
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            বানান সঠিক কিনা দেখুন বা জেনেরিক নাম (যেমন Paracetamol) লিখে খুঁজুন
+          </p>
+        </div>
+      )}
+
       {/* Suggestions Dropdown */}
       {showDropdown && suggestions.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-[100] overflow-hidden max-h-[72vh] overflow-y-auto animate-in fade-in-50 duration-150">
@@ -182,6 +204,11 @@ const SearchInputBox = ({
                     <p className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-primary transition-colors">
                       {item.name}
                     </p>
+                    {item.generic_name && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 italic font-medium">
+                        {item.generic_name}
+                      </p>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
                         {formatPrice(item.price)}
@@ -264,6 +291,7 @@ const SearchInputBox = ({
 const Navbar = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 160);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<string[]>(getSearchHistory());
@@ -272,20 +300,16 @@ const Navbar = () => {
   const { data: siteSettings } = useSiteSettings();
   const { t } = useLanguage();
 
-  const { data: suggestions = [] } = useQuery({
-    queryKey: ["search-suggestions", query],
-    queryFn: async () => {
-      if (!query.trim()) return [];
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, image_url, price, original_price, slug")
-        .eq("is_active", true)
-        .ilike("name", `%${query}%`)
-        .order("sold_count", { ascending: false })
-        .limit(8);
-      return data || [];
-    },
-    enabled: query.trim().length >= 1,
+  const { data: suggestions = [], isFetching } = useQuery({
+    queryKey: ["search-suggestions", debouncedQuery],
+    queryFn: () =>
+      searchProductsSmart(
+        debouncedQuery,
+        "id, name, generic_name, image_url, price, original_price, slug, sold_count, stock",
+        8
+      ),
+    enabled: debouncedQuery.trim().length >= 1,
+    staleTime: 1000 * 60 * 5,
   });
 
   useEffect(() => {
@@ -317,6 +341,7 @@ const Navbar = () => {
     setShowDropdown,
     showDropdown,
     suggestions,
+    isFetching,
     handleSubmit,
     wrapperRef,
     navigate,

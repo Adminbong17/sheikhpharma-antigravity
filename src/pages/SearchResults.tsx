@@ -17,6 +17,7 @@ import TrustBadges from "@/components/TrustBadges";
 import { isEffectivePreorder } from "@/lib/preorder";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
+import { searchProductsSmart } from "@/lib/smartSearch";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -34,31 +35,9 @@ const SearchResults = () => {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["search-products", q],
-    queryFn: async () => {
-      if (!q.trim()) return [];
-      const { data } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .or(`name.ilike.%${q}%,generic_name.ilike.%${q}%,description.ilike.%${q}%`)
-        .order("created_at", { ascending: false })
-        .limit(80);
-      const items = data || [];
-      // Relevance ranking: name starts-with > word starts-with > name contains > generic name > description only
-      const term = q.trim().toLowerCase();
-      const score = (p: any) => {
-        const name = (p.name || "").toLowerCase();
-        const generic = (p.generic_name || "").toLowerCase();
-        if (name === term) return 0;
-        if (name.startsWith(term)) return 1;
-        if (name.split(/[\s-]+/).some((w: string) => w.startsWith(term))) return 2;
-        if (name.includes(term)) return 3;
-        if (generic.includes(term)) return 4;
-        return 5;
-      };
-      return items.sort((a, b) => score(a) - score(b));
-    },
+    queryFn: () => searchProductsSmart(q, "*", 100),
     enabled: q.trim().length > 0,
+    staleTime: 1000 * 60 * 5,
   });
 
   const filtered = useMemo(() => {
