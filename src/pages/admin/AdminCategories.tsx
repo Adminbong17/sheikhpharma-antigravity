@@ -345,8 +345,8 @@ const AdminCategories = () => {
               ) : filteredCats.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary">
-                      <CategoryIcon iconUrl={c.icon_url} name={c.name} className="h-6 w-6" iconClassName="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-card border border-border/70 p-1 shadow-xs">
+                      <CategoryIcon iconUrl={c.icon_url} name={c.name} slug={c.slug} className="h-full w-full" />
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{c.name}</TableCell>

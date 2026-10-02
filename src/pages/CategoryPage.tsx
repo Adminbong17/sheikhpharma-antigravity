@@ -99,12 +99,12 @@ const CategoryPage = () => {
       <main className="container mx-auto px-4 py-6">
         <div className="mb-4"><BackButton /></div>
 
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary overflow-hidden">
-            <CategoryIcon iconUrl={category.icon_url} name={category.name} className="h-8 w-8" iconClassName="h-6 w-6" />
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-card border border-border/70 p-1 shadow-sm">
+            <CategoryIcon iconUrl={category.icon_url} name={category.name} slug={category.slug} className="h-full w-full" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{category.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{category.name}</h1>
             <p className="text-sm text-muted-foreground">{products.length} products</p>
           </div>
         </div>
