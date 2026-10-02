@@ -138,7 +138,7 @@ export async function searchProductsSmart(
   rawQuery: string,
   fields: string = "id, name, generic_name, price, original_price, image_url, slug, sold_count, stock",
   limit: number = 8
-) {
+): Promise<any[]> {
   const normalized = normalizeSearchQuery(rawQuery);
   if (!normalized || normalized.length < 1) return [];
 
@@ -152,7 +152,7 @@ export async function searchProductsSmart(
   // - Or fallback substring match
   const { data, error } = await supabase
     .from("products")
-    .select(fields)
+    .select(fields as any)
     .eq("is_active", true)
     .or(
       `name.ilike.${primaryWord}%,name.ilike.% ${primaryWord}%,generic_name.ilike.${primaryWord}%,name.ilike.%${primaryWord}%`

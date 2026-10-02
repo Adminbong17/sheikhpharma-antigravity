@@ -22,16 +22,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: "esnext",
+    target: "es2020",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 800,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
-          "vendor-supabase": ["@supabase/supabase-js"],
-        },
-      },
-    },
   },
 }));
