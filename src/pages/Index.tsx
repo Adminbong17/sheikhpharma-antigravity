@@ -67,16 +67,16 @@ const Index = () => {
           {/* Decorative floating gradient blobs */}
           <div className="pointer-events-none absolute -top-10 -left-10 h-48 w-48 rounded-full bg-gradient-to-br from-primary/20 to-accent/10 blur-3xl animate-float" />
           <div className="pointer-events-none absolute top-20 right-0 h-56 w-56 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 blur-3xl animate-float" style={{ animationDelay: "1.2s" }} />
-          <div className="container mx-auto px-4 pt-4 flex gap-4 items-start relative">
+          <div className="container mx-auto px-3 sm:px-4 pt-3 sm:pt-4 flex gap-4 items-start relative">
             <HomepageLeftMenu variant="desktop" />
-            <div className="flex-1 min-w-0 rounded-2xl">
+            <div className="flex-1 min-w-0">
               <HeroBanner />
             </div>
           </div>
         </section>
 
         {/* Emergency button — directly under hero slider */}
-        <div className="container mx-auto px-4 pt-3">
+        <div className="container mx-auto px-3 sm:px-4 pt-3">
           <Link
             to="/emergency"
             className="group relative flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-white font-bold shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden bg-gradient-to-r from-red-600 via-rose-600 to-red-700 ring-2 ring-red-400/40"
