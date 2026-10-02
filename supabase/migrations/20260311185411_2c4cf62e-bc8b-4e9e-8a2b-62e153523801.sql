@@ -1,0 +1,1 @@
+ALTER TABLE public.refund_requests ADD COLUMN IF NOT EXISTS request_type text NOT NULL DEFAULT 'refund';

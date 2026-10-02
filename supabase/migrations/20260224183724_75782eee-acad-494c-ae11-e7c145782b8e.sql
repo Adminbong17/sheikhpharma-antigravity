@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN price_unit text DEFAULT NULL;

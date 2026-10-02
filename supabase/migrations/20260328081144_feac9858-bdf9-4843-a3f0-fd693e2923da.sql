@@ -1,0 +1,1 @@
+DELETE FROM products WHERE created_at::date = CURRENT_DATE;

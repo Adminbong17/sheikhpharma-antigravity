@@ -1,0 +1,16 @@
+ALTER TABLE public.sms_settings
+  ADD COLUMN IF NOT EXISTS api_url text DEFAULT 'https://smpp.revesms.com:7790/sendtext',
+  ADD COLUMN IF NOT EXISTS api_key text,
+  ADD COLUMN IF NOT EXISTS secret_key text,
+  ADD COLUMN IF NOT EXISTS caller_id text,
+  ADD COLUMN IF NOT EXISTS admin_phone text,
+  ADD COLUMN IF NOT EXISTS on_new_order boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_order_confirmed boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_order_shipped boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_order_delivered boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_order_cancelled boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_payment_received boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS on_refund_approved boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS notify_admin boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS notify_customer boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS notify_vendor boolean DEFAULT true;

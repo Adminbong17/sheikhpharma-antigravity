@@ -1,0 +1,1 @@
+ALTER TABLE public.homepage_sections ADD COLUMN icon text DEFAULT NULL;

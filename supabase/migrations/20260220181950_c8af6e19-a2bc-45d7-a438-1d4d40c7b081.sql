@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN is_qmall_verified boolean NOT NULL DEFAULT false;

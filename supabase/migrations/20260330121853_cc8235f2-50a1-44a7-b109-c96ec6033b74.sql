@@ -1,0 +1,1 @@
+ALTER TABLE public.lab_center_tests ADD COLUMN govt_price numeric DEFAULT 0;

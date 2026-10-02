@@ -1,0 +1,1 @@
+UPDATE public.delivery_zones SET charge = 100;

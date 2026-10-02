@@ -1,0 +1,1 @@
+ALTER TABLE public.flash_deal_products ADD COLUMN IF NOT EXISTS deal_price numeric DEFAULT NULL;

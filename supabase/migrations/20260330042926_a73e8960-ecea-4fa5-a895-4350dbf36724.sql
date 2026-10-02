@@ -1,0 +1,1 @@
+CREATE POLICY "Admins can delete prescriptions" ON storage.objects FOR DELETE USING (bucket_id = 'prescriptions' AND has_role(auth.uid(), 'admin'::app_role));

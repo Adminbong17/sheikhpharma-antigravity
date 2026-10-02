@@ -1,0 +1,1 @@
+ALTER TABLE public.flash_deals ADD COLUMN IF NOT EXISTS banner_color text DEFAULT '#ef4444';

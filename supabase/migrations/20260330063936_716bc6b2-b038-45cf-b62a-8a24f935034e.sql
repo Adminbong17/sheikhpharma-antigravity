@@ -1,0 +1,1 @@
+UPDATE public.site_settings SET primary_color = '231 72% 56%', accent_color = '160 84% 39%';

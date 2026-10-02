@@ -1,0 +1,1 @@
+UPDATE lab_tests SET category = 'Pathology' WHERE id = '00a226ed-9cf8-4c87-91d7-a6d871a28643';

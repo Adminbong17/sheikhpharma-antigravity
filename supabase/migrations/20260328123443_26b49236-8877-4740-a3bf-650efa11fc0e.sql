@@ -1,0 +1,1 @@
+DELETE FROM products WHERE id IN (SELECT id FROM products ORDER BY created_at DESC LIMIT 395)

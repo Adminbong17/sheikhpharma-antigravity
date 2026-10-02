@@ -1,0 +1,1 @@
+UPDATE site_settings SET bkash_base_url = 'https://tokenized.sandbox.bka.sh/v1.2.0-beta' WHERE bkash_base_url = 'https://tokenized.sandbox.bka.sh/v2';

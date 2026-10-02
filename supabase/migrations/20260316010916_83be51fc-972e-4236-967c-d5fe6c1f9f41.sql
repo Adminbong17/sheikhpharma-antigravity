@@ -1,0 +1,1 @@
+ALTER TABLE public.order_items ADD COLUMN product_name text DEFAULT NULL;

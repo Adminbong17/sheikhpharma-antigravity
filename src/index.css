@@ -1,0 +1,468 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+@layer base {
+  :root {
+    --background: 210 25% 96%;
+    --foreground: 220 39% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 39% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 39% 11%;
+
+    --primary: 231 72% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 25% 96%;
+    --secondary-foreground: 220 39% 11%;
+
+    --muted: 220 9% 65%;
+    --muted-foreground: 220 9% 50%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 231 72% 56%;
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 39% 11%;
+    --sidebar-primary: 231 72% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 84% 90%;
+    --sidebar-accent-foreground: 160 84% 25%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 231 72% 56%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 231 72% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 220 9% 25%;
+    --muted-foreground: 220 9% 60%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 231 72% 56%;
+
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 231 72% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 84% 15%;
+    --sidebar-accent-foreground: 160 84% 70%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 231 72% 56%;
+  }
+}
+
+@font-face {
+  font-family: 'Kalaa Unicode';
+  src: url('/fonts/Kalaa-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kalaa Unicode';
+  src: url('/fonts/Kalaa-Regular.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kalaa Unicode';
+  src: url('/fonts/Kalaa-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LDF Comic Sans';
+  src: url('/fonts/Ldfcomicsans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LDF Comic Sans';
+  src: url('/fonts/Ldfcomicsans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LDF Comic Sans';
+  src: url('/fonts/Ldfcomicsans-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  *, ::before, ::after {
+    @apply border-border;
+    font-family: 'LDF Comic Sans', 'Kalaa Unicode', 'Comic Sans MS', cursive, sans-serif !important;
+  }
+
+  body {
+    @apply bg-background text-foreground pb-[60px] md:pb-0;
+    font-family: 'LDF Comic Sans', 'Kalaa Unicode', 'Comic Sans MS', cursive, sans-serif !important;
+    font-style: normal;
+    overflow-x: hidden;
+  }
+
+  header, footer, nav {
+    font-family: 'LDF Comic Sans', 'Kalaa Unicode', 'Comic Sans MS', cursive, sans-serif !important;
+  }
+
+  button, input, optgroup, select, textarea {
+    font-family: 'LDF Comic Sans', 'Kalaa Unicode', 'Comic Sans MS', cursive, sans-serif !important;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Product description section typography */
+.product-desc-body br + br {
+  display: none;
+}
+.product-desc-body p {
+  margin-bottom: 0.5rem;
+}
+.product-desc-body ul,
+.product-desc-body ol {
+  margin: 0.25rem 0 0.5rem 1.1rem;
+  list-style: disc;
+}
+.product-desc-body ol {
+  list-style: decimal;
+}
+.product-desc-body li {
+  margin-bottom: 0.2rem;
+}
+.product-desc-body strong,
+.product-desc-body b {
+  @apply text-foreground font-semibold;
+}
+.product-desc-body table {
+  @apply w-full border-collapse text-xs my-2;
+}
+.product-desc-body th,
+.product-desc-body td {
+  @apply border border-border px-2 py-1 text-left;
+}
+
+
+/* Scroll reveal */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 25s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+.animate-scroll-fast {
+  animation: scroll 12s linear infinite;
+}
+
+.animate-scroll-fast:hover {
+  animation-play-state: paused;
+}
+
+.water-vibe-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, transparent 70%);
+  animation: water-ripple 2.5s ease-in-out infinite;
+}
+
+@keyframes water-ripple {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  50% { transform: translate(10%, 10%) scale(1.1); opacity: 0.15; }
+}
+
+/* ---------------------------------------------------------
+   Design tokens: gradients, shadows, decorative borders
+   --------------------------------------------------------- */
+@layer base {
+  :root {
+    --primary-glow: 231 86% 70%;
+    --accent-glow: 160 84% 55%;
+    --surface: 0 0% 100%;
+    --surface-muted: 210 30% 98%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent-glow)) 100%);
+    --gradient-brand: linear-gradient(120deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--surface-muted)) 100%);
+    --gradient-sheen: linear-gradient(100deg, transparent 20%, hsl(0 0% 100% / 0.35) 50%, transparent 80%);
+
+    --shadow-soft: 0 1px 2px hsl(220 39% 11% / 0.05), 0 4px 14px -6px hsl(220 39% 11% / 0.12);
+    --shadow-elegant: 0 10px 30px -12px hsl(var(--primary) / 0.35);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.12), 0 8px 28px -10px hsl(var(--primary) / 0.4);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dark {
+    --surface: 0 0% 12%;
+    --surface-muted: 0 0% 9%;
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.4), 0 4px 14px -6px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer components {
+  /* Card with visible outer border + soft elevation */
+  .surface-card {
+    @apply rounded-lg border border-border bg-card;
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+  }
+  .surface-card:hover {
+    box-shadow: var(--shadow-elegant);
+    transform: translateY(-2px);
+  }
+
+  /* Gradient outline border (border outside the box) */
+  .gradient-border {
+    position: relative;
+    border-radius: calc(var(--radius) + 4px);
+    background: hsl(var(--card));
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    background: var(--gradient-brand);
+    z-index: -1;
+    opacity: 0.9;
+  }
+
+  .text-gradient {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gradient-brand { background-image: var(--gradient-brand); }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-accent { background-image: var(--gradient-accent); }
+  .bg-gradient-surface { background-image: var(--gradient-surface); }
+
+  /* Shimmering sheen sweep on hover */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-sheen);
+    transform: translateX(-120%);
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+  .sheen:hover::after { transform: translateX(120%); }
+
+  /* Safe horizontal gutters so content never gets cut at edges */
+  .page-gutter {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}
+
+/* ---------------------------------------------------------
+   Motion
+   --------------------------------------------------------- */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
+  50% { box-shadow: 0 0 0 10px hsl(var(--primary) / 0); }
+}
+
+.animate-fade-in-up { animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-scale-in { animation: scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-glow-pulse { animation: glow-pulse 2.4s ease-out infinite; }
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+.hover-lift { transition: var(--transition-smooth); }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-elegant); }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-glow-pulse,
+  .animate-gradient,
+  .animate-float,
+  .animate-scroll,
+  .animate-scroll-fast {
+    animation: none !important;
+  }
+  .hover-lift:hover, .surface-card:hover { transform: none; }
+}
+
+/* ---------------------------------------------------------
+   Print
+   --------------------------------------------------------- */
+@page {
+  size: A4;
+  margin: 12mm 10mm;
+}
+
+@media print {
+  html, body, #root {
+    background: #fff !important;
+    overflow: visible !important;
+    max-width: none !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body {
+    font-size: 11pt;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide app chrome */
+  header, nav, aside, footer,
+  .no-print,
+  [data-print="hide"],
+  [role="dialog"] > button,
+  [data-radix-popper-content-wrapper],
+  .fixed, .sticky {
+    display: none !important;
+  }
+
+  .print-only { display: block !important; }
+
+  /* Free the main content from scroll containers so it never overlaps */
+  main, .print-area, [data-print="area"] {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Any inner scroll region should expand */
+  [class*="overflow-"] { overflow: visible !important; }
+  [class*="max-h-"] { max-height: none !important; }
+
+  table { width: 100% !important; border-collapse: collapse !important; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr, img, .surface-card, .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  th, td { border: 1px solid #ccc !important; padding: 4px 6px !important; }
+
+  h1, h2, h3 { break-after: avoid; page-break-after: avoid; }
+  a[href]::after { content: ""; }
+
+  .print-break-before { break-before: page; page-break-before: always; }
+}
+
+.print-only { display: none; }

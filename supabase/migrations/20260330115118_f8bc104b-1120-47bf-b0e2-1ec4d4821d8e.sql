@@ -1,0 +1,1 @@
+ALTER TABLE public.lab_centers ADD COLUMN logo_url text;

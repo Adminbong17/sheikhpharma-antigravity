@@ -1,0 +1,104 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+export const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+export function isV2(base: string) {
+  return base.includes("/v2");
+}
+
+export async function getBkashConfig() {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  let BKASH_BASE = Deno.env.get("BKASH_BASE_URL") || "https://tokenized.sandbox.bka.sh/v1.2.0-beta";
+  let APP_KEY = Deno.env.get("BKASH_APP_KEY") || "";
+  let APP_SECRET = Deno.env.get("BKASH_APP_SECRET") || "";
+  let USERNAME = Deno.env.get("BKASH_USERNAME") || "";
+  let PASSWORD = Deno.env.get("BKASH_PASSWORD") || "";
+
+  const { data: s } = await supabase
+    .from("site_settings")
+    .select("bkash_base_url, bkash_app_key, bkash_app_secret, bkash_username, bkash_password")
+    .single();
+
+  if (s?.bkash_base_url) BKASH_BASE = s.bkash_base_url;
+  if (s?.bkash_app_key) APP_KEY = s.bkash_app_key;
+  if (s?.bkash_app_secret) APP_SECRET = s.bkash_app_secret;
+  if (s?.bkash_username) USERNAME = s.bkash_username;
+  if (s?.bkash_password) PASSWORD = s.bkash_password;
+
+  return { BKASH_BASE, APP_KEY, APP_SECRET, USERNAME, PASSWORD, supabase };
+}
+
+export async function getOrRefreshToken(
+  supabase: any,
+  bkashBase: string,
+  appKey: string,
+  appSecret: string,
+  username: string,
+  password: string,
+): Promise<string> {
+  const { data: existing } = await supabase
+    .from("bkash_tokens")
+    .select("id, id_token, refresh_token, expires_at")
+    .order("granted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing && new Date(existing.expires_at) > new Date()) return existing.id_token;
+
+  if (existing?.refresh_token) {
+    try {
+      const refreshUrl = isV2(bkashBase)
+        ? `${bkashBase}/checkout/token/refresh`
+        : `${bkashBase}/tokenized/checkout/token/refresh`;
+      const res = await fetch(refreshUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", username, password },
+        body: JSON.stringify({ app_key: appKey, app_secret: appSecret, refresh_token: existing.refresh_token }),
+        signal: AbortSignal.timeout(30000),
+      });
+      const data = await res.json();
+      if (data.id_token) {
+        const now = new Date();
+        await supabase.from("bkash_tokens").update({
+          id_token: data.id_token,
+          refresh_token: data.refresh_token || existing.refresh_token,
+          granted_at: now.toISOString(),
+          expires_at: new Date(now.getTime() + 55 * 60 * 1000).toISOString(),
+        }).eq("id", existing.id);
+        return data.id_token;
+      }
+    } catch (e) {
+      console.log(`[bKash] Refresh error: ${(e as Error).message}`);
+    }
+  }
+
+  const grantUrl = isV2(bkashBase)
+    ? `${bkashBase}/checkout/token/grant`
+    : `${bkashBase}/tokenized/checkout/token/grant`;
+  const res = await fetch(grantUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json", username, password },
+    body: JSON.stringify({ app_key: appKey, app_secret: appSecret }),
+    signal: AbortSignal.timeout(30000),
+  });
+  const data = await res.json();
+  if (!data.id_token) throw new Error(data.errorMessageEn || data.statusMessage || "Grant token failed");
+
+  const now = new Date();
+  if (existing) await supabase.from("bkash_tokens").delete().eq("id", existing.id);
+  await supabase.from("bkash_tokens").insert({
+    id_token: data.id_token,
+    refresh_token: data.refresh_token || null,
+    granted_at: now.toISOString(),
+    expires_at: new Date(now.getTime() + 55 * 60 * 1000).toISOString(),
+  });
+  return data.id_token;
+}

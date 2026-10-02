@@ -1,0 +1,1 @@
+UPDATE invoices SET status = 'pending' WHERE vendor_id IS NOT NULL AND status = 'saved';
