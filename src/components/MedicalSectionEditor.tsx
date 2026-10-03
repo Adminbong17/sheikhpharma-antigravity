@@ -89,22 +89,65 @@ export function parseDescriptionToSections(htmlDescription: string | null | unde
     const rawBody = match[2];
     const textContent = cleanHtmlToText(rawBody);
 
-    const lowerTitle = rawTitle.toLowerCase();
-    if (lowerTitle.includes("composition") || lowerTitle.includes("উপাদান")) {
-      standard.composition = textContent;
-    } else if (lowerTitle.includes("indication") || lowerTitle.includes("নির্দেশনা") || lowerTitle.includes("therapeutic")) {
-      standard.indications = textContent;
-    } else if (lowerTitle.includes("dosage") || lowerTitle.includes("administration") || lowerTitle.includes("সেবনবিধি") || lowerTitle.includes("মাত্রা")) {
-      standard.dosage = textContent;
-    } else if (lowerTitle.includes("side effect") || lowerTitle.includes("পার্শ্বপ্রতিক্রিয়া") || lowerTitle.includes("adverse")) {
-      standard.side_effects = textContent;
-    } else if (lowerTitle.includes("pharmacolog") || lowerTitle.includes("কার্যপদ্ধতি") || lowerTitle.includes("mode of action")) {
-      standard.pharmacology = textContent;
-    } else if (lowerTitle.includes("precaution") || lowerTitle.includes("warning") || lowerTitle.includes("সতর্কতা")) {
-      standard.precautions = textContent;
-    } else if (lowerTitle.includes("contraindicat") || lowerTitle.includes("নিষিদ্ধ") || lowerTitle.includes("প্রতিনির্দেশনা") || lowerTitle.includes("বিরোধিতা")) {
+    const lowerTitle = rawTitle.toLowerCase().trim();
+
+    // IMPORTANT: Check Contraindications BEFORE Indications because "contraindications" includes the substring "indication"!
+    if (
+      lowerTitle.includes("contraindicat") || 
+      lowerTitle.includes("contra-indicat") || 
+      lowerTitle.includes("নিষিদ্ধ") || 
+      lowerTitle.includes("প্রতিনির্দেশনা") || 
+      lowerTitle.includes("বিরোধিতা")
+    ) {
       standard.contraindications = textContent;
-    } else if (lowerTitle === "description" || lowerTitle === "বিবরণ") {
+    } else if (
+      lowerTitle.includes("composition") || 
+      lowerTitle.includes("উপাদান") || 
+      lowerTitle.includes("ingredient")
+    ) {
+      standard.composition = textContent;
+    } else if (
+      lowerTitle.includes("indication") || 
+      lowerTitle.includes("নির্দেশনা") || 
+      lowerTitle.includes("therapeutic") || 
+      lowerTitle.includes("uses")
+    ) {
+      standard.indications = textContent;
+    } else if (
+      lowerTitle.includes("dosage") || 
+      lowerTitle.includes("administration") || 
+      lowerTitle.includes("সেবনবিধি") || 
+      lowerTitle.includes("মাত্রা") ||
+      lowerTitle.includes("ব্যবহারবিধি")
+    ) {
+      standard.dosage = textContent;
+    } else if (
+      lowerTitle.includes("side effect") || 
+      lowerTitle.includes("adverse") || 
+      lowerTitle.includes("পার্শ্বপ্রতিক্রিয়া") ||
+      lowerTitle.includes("পার্শ্ব প্রতিক্রিয়া")
+    ) {
+      standard.side_effects = textContent;
+    } else if (
+      lowerTitle.includes("pharmacolog") || 
+      lowerTitle.includes("কার্যপদ্ধতি") || 
+      lowerTitle.includes("mode of action") ||
+      lowerTitle.includes("mechanism")
+    ) {
+      standard.pharmacology = textContent;
+    } else if (
+      lowerTitle.includes("precaution") || 
+      lowerTitle.includes("warning") || 
+      lowerTitle.includes("সতর্কতা") ||
+      lowerTitle.includes("সাবধানতা")
+    ) {
+      standard.precautions = textContent;
+    } else if (
+      lowerTitle === "description" || 
+      lowerTitle === "বিবরণ" || 
+      lowerTitle === "general notes" ||
+      lowerTitle === "general"
+    ) {
       general = textContent;
     } else {
       custom.push({ 
@@ -207,34 +250,26 @@ interface Props {
 }
 
 export const MedicalSectionEditor: React.FC<Props> = ({ value, onChange }) => {
-  const [standard, setStandard] = useState<Record<string, string>>({
-    composition: "",
-    indications: "",
-    dosage: "",
-    side_effects: "",
-    pharmacology: "",
-    precautions: "",
-    contraindications: "",
-  });
-  const [custom, setCustom] = useState<CustomMedicalSection[]>([]);
-  const [general, setGeneral] = useState<string>("");
+  // Initialize state with parsed contents from `value` immediately on mount
+  const [standard, setStandard] = useState<Record<string, string>>(() => parseDescriptionToSections(value).standardSections);
+  const [custom, setCustom] = useState<CustomMedicalSection[]>(() => parseDescriptionToSections(value).customSections);
+  const [general, setGeneral] = useState<string>(() => parseDescriptionToSections(value).generalDescription);
   const [mode, setMode] = useState<"fields" | "raw">("fields");
   const [rawHtml, setRawHtml] = useState<string>(value || "");
   
-  // Track last serialized HTML to prevent re-parse loop on keystrokes
-  const lastSerializedHtmlRef = useRef<string>(value || "");
+  // Track last serialized HTML so we know if `value` was changed by external parent (e.g. loading a product in openEdit)
+  const lastSerializedHtmlRef = useRef<string | null>(value || null);
 
   // Sync state only when external `value` prop changes from outside
   useEffect(() => {
-    if (value === lastSerializedHtmlRef.current) {
-      return;
+    if (lastSerializedHtmlRef.current === null || value !== lastSerializedHtmlRef.current) {
+      const parsed = parseDescriptionToSections(value);
+      setStandard(parsed.standardSections);
+      setCustom(parsed.customSections);
+      setGeneral(parsed.generalDescription);
+      setRawHtml(value || "");
+      lastSerializedHtmlRef.current = value || "";
     }
-    const parsed = parseDescriptionToSections(value);
-    setStandard(parsed.standardSections);
-    setCustom(parsed.customSections);
-    setGeneral(parsed.generalDescription);
-    setRawHtml(value || "");
-    lastSerializedHtmlRef.current = value || "";
   }, [value]);
 
   const emitChanges = (
@@ -373,7 +408,7 @@ export const MedicalSectionEditor: React.FC<Props> = ({ value, onChange }) => {
               );
             })}
 
-            {/* General / Other Notes (Spans cleanly as 8th item or 2 cols) */}
+            {/* General / Other Notes (Spans cleanly as 8th item in 2 cols grid) */}
             <div className={`space-y-1.5 p-3 rounded-lg border transition-all ${
               general.trim() ? "bg-primary/[0.03] border-primary/30" : "bg-muted/10 border-border"
             }`}>
