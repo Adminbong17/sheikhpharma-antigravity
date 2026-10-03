@@ -40,30 +40,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("fetchRoles error:", error.message);
         setIsAdmin(false);
         setIsVendor(false);
-        return;
+        return { isAdmin: false, isVendor: false };
       }
 
       const roles = (data || []).map((r) => r.role);
-      setIsAdmin(roles.includes("admin"));
-      setIsVendor(roles.includes("vendor"));
+      const isAdm = roles.includes("admin");
+      const isVend = roles.includes("vendor");
+      setIsAdmin(isAdm);
+      setIsVendor(isVend);
+      return { isAdmin: isAdm, isVendor: isVend };
     } catch (e) {
       console.error("fetchRoles exception:", e);
       setIsAdmin(false);
       setIsVendor(false);
+      return { isAdmin: false, isVendor: false };
     }
   }, []);
 
-  const applySession = useCallback((nextSession: Session | null) => {
+  const applySession = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
     setUser(nextSession?.user ?? null);
 
     if (nextSession?.user) {
-      void fetchRoles(nextSession.user.id);
-      return;
+      await fetchRoles(nextSession.user.id);
+    } else {
+      setIsAdmin(false);
+      setIsVendor(false);
     }
-
-    setIsAdmin(false);
-    setIsVendor(false);
   }, [fetchRoles]);
 
   useEffect(() => {
@@ -93,11 +96,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (!isMounted) return;
-        applySession(nextSession);
+        await applySession(nextSession);
       } catch (error) {
         console.error("initializeAuth error:", error);
         if (!isMounted) return;
-        applySession(null);
+        await applySession(null);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -105,9 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!isMounted) return;
-      applySession(nextSession);
+      await applySession(nextSession);
     });
 
     void initializeAuth();
