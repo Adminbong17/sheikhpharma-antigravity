@@ -9,6 +9,8 @@ import { Plus, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logActivity";
 
+import { uploadToVault } from "@/lib/vaultStorage";
+
 interface BrandOption {
   id: string;
   name: string;
@@ -57,12 +59,10 @@ const BrandSelectWithCreate = ({
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `brands/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file);
-      if (error) throw error;
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      setLogoUrl(data.publicUrl);
+      const ext = file.name.split(".").pop() || "png";
+      const customName = `brand-${Date.now()}.${ext}`;
+      const vaultUrl = await uploadToVault(file, customName);
+      setLogoUrl(vaultUrl);
     } catch (err: any) {
       toast.error(err.message || "Logo upload failed");
     } finally {

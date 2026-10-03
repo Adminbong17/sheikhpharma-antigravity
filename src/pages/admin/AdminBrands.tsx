@@ -23,6 +23,8 @@ import type { PrintColumn } from "@/lib/printExport";
 import BackButton from "@/components/BackButton";
 import BulkBrandUpload from "@/components/BulkBrandUpload";
 
+import { uploadToVault } from "@/lib/vaultStorage";
+
 const AdminBrands = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -51,12 +53,10 @@ const AdminBrands = () => {
   });
 
   const uploadLogo = async (file: File) => {
-    const ext = file.name.split(".").pop();
-    const path = `brands/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file);
-    if (error) throw error;
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    return data.publicUrl;
+    const ext = file.name.split(".").pop() || "png";
+    const customName = `brand-${Date.now()}.${ext}`;
+    const vaultUrl = await uploadToVault(file, customName);
+    return vaultUrl;
   };
 
   const addMutation = useMutation({
