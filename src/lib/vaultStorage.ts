@@ -53,9 +53,20 @@ export async function getVaultToken(): Promise<string> {
 
 /**
  * Uploads a file (image, document, asset) to vault.bongbangla.top.
- * Returns the permanent public share URL.
+ * Returns the permanent public share URL as a string.
  */
 export async function uploadToVault(
+  file: File | Blob,
+  fileName?: string
+): Promise<string> {
+  const meta = await uploadToVaultWithMeta(file, fileName);
+  return meta.url;
+}
+
+/**
+ * Uploads a file and returns full metadata (url, shareToken, fileId).
+ */
+export async function uploadToVaultWithMeta(
   file: File | Blob,
   fileName?: string
 ): Promise<{ url: string; shareToken: string; fileId: number }> {

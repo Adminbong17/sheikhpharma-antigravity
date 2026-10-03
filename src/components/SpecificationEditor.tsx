@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, SlidersHorizontal } from "lucide-react";
 
 export interface SpecRow {
   key: string;
@@ -15,36 +15,39 @@ interface SpecificationEditorProps {
 }
 
 /** Parse an HTML specs table (prepended to description) back into SpecRow[] */
-export function parseSpecsFromDescription(description: string | null): { specs: SpecRow[]; restDescription: string } {
-  if (!description) return { specs: [], restDescription: "" };
-  const match = description.match(/^<table[\s\S]*?<\/table>([\s\S]*)$/i);
-  if (!match) return { specs: [], restDescription: description };
+export function parseSpecsFromDescription(description: string | null | undefined): { specs: SpecRow[]; restDescription: string } {
+  if (!description || !description.trim()) return { specs: [], restDescription: "" };
+  
+  const tableMatch = description.match(/^\s*(<table[\s\S]*?<\/table>)([\s\S]*)$/i);
+  if (!tableMatch) return { specs: [], restDescription: description.trim() };
 
-  const tableHtml = description.slice(0, description.indexOf(match[1]));
-  const restDescription = match[1].trim();
+  const tableHtml = tableMatch[1];
+  const restDescription = tableMatch[2].trim();
 
   const specs: SpecRow[] = [];
   const rowRegex = /<tr[^>]*>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<\/tr>/gi;
-  let m;
+  let m: RegExpExecArray | null;
   while ((m = rowRegex.exec(tableHtml)) !== null) {
-    const key = m[1].replace(/<[^>]*>/g, "").trim();
-    const value = m[2].replace(/<[^>]*>/g, "").trim();
-    if (key) specs.push({ key, value });
+    const key = m[1].replace(/<[^>]+>/g, "").trim();
+    const value = m[2].replace(/<[^>]+>/g, "").trim();
+    if (key || value) specs.push({ key, value });
   }
   return { specs, restDescription };
 }
 
 /** Build an HTML specs table string from SpecRow[] */
 export function buildSpecsTable(specs: SpecRow[]): string {
-  if (specs.length === 0) return "";
-  const rows = specs
-    .filter(s => s.key.trim())
-    .map(s => `<tr><td style="padding:6px 12px;border:1px solid #e5e7eb;width:40%">${s.key}</td><td style="padding:6px 12px;border:1px solid #e5e7eb;font-weight:500">${s.value}</td></tr>`)
-    .join("");
-  return `<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><tbody>${rows}</tbody></table>`;
+  const validSpecs = specs.filter(s => s.key.trim() || s.value.trim());
+  if (validSpecs.length === 0) return "";
+  
+  const rows = validSpecs
+    .map(s => `<tr><td style="padding:8px 14px;border:1px solid #e2e8f0;width:35%;font-weight:600;color:#334155;background-color:#f8fafc">${s.key.trim()}</td><td style="padding:8px 14px;border:1px solid #e2e8f0;font-weight:500;color:#0f172a">${s.value.trim()}</td></tr>`)
+    .join("\n");
+    
+  return `<table style="width:100%;border-collapse:collapse;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0"><tbody>\n${rows}\n</tbody></table>\n\n`;
 }
 
-const SpecificationEditor = ({ specs, onChange }: SpecificationEditorProps) => {
+const SpecificationEditor: React.FC<SpecificationEditorProps> = ({ specs, onChange }) => {
   const addSpec = () => {
     onChange([...specs, { key: "", value: "" }]);
   };
@@ -59,45 +62,68 @@ const SpecificationEditor = ({ specs, onChange }: SpecificationEditorProps) => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-lg border bg-card p-4 shadow-xs">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Specifications</Label>
-        <Button type="button" variant="outline" size="sm" onClick={addSpec}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Add
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-primary" />
+          <Label className="text-sm font-bold text-foreground">
+            পণ্যের বৈশিষ্ট্য ও স্পেসিফিকেশন (Product Specifications)
+          </Label>
+        </div>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="sm" 
+          onClick={addSpec}
+          className="text-xs h-7 px-2.5 gap-1 border-dashed"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          স্পেসিফিকেশন যোগ করুন
         </Button>
       </div>
 
-      {specs.length > 0 && (
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+      {specs.length > 0 ? (
+        <div className="rounded-lg border overflow-hidden bg-background">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="bg-muted/50">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Key</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Value</th>
+              <tr className="bg-muted/60 border-b">
+                <th className="px-3 py-2 text-left font-semibold text-muted-foreground w-2/5">
+                  বৈশিষ্ট্যের নাম (Key / Feature)
+                </th>
+                <th className="px-3 py-2 text-left font-semibold text-muted-foreground">
+                  মান / বিবরণ (Value / Detail)
+                </th>
                 <th className="w-10"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y">
               {specs.map((spec, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="px-2 py-1.5">
+                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-2">
                     <Input
                       value={spec.key}
                       onChange={(e) => updateSpec(i, "key", e.target.value)}
-                      placeholder="e.g. Weight"
-                      className="h-8 text-sm"
+                      placeholder="যেমন: Dosage Form, Strength, Pack Size..."
+                      className="h-8 text-xs bg-background"
                     />
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td className="p-2">
                     <Input
                       value={spec.value}
                       onChange={(e) => updateSpec(i, "value", e.target.value)}
-                      placeholder="e.g. 500g"
-                      className="h-8 text-sm"
+                      placeholder="যেমন: Tablet, 500 mg, 10x10 Strips..."
+                      className="h-8 text-xs bg-background"
                     />
                   </td>
-                  <td className="px-1 py-1.5">
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeSpec(i)}>
+                  <td className="p-2 text-center">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-7 w-7 text-destructive hover:bg-destructive/10" 
+                      onClick={() => removeSpec(i)}
+                      title="মুছুন"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </td>
@@ -106,10 +132,10 @@ const SpecificationEditor = ({ specs, onChange }: SpecificationEditorProps) => {
             </tbody>
           </table>
         </div>
-      )}
-
-      {specs.length === 0 && (
-        <p className="text-xs text-muted-foreground">কোনো স্পেসিফিকেশন নেই। + Add বাটনে ক্লিক করে যোগ করুন।</p>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">
+          কোনো অতিরিক্ত স্পেসিফিকেশন যোগ করা হয়নি। উপরের "+ স্পেসিফিকেশন যোগ করুন" বাটনে ক্লিক করে যোগ করতে পারেন।
+        </p>
       )}
     </div>
   );
