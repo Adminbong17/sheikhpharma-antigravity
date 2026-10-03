@@ -29,6 +29,7 @@ import { exportCSV, type PrintColumn } from "@/lib/printExport";
 import BackButton from "@/components/BackButton";
 import BrandSelectWithCreate from "@/components/BrandSelectWithCreate";
 import { uploadToVault } from "@/lib/vaultStorage";
+import MedicalSectionEditor from "@/components/MedicalSectionEditor";
 
 export interface ProductListItem {
   id: string;
@@ -1129,20 +1130,10 @@ const AdminProducts = () => {
 
                   {/* Medical Description & Specifications */}
                   <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
-                    <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> ৫. মেডিকেল বিবরণ ও সেবনবিধি (Medical Description)
-                    </h3>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">HTML বা টেক্সট বিবরণ (Composition, Indications, Dosage, Side Effects...)</Label>
-                      <Textarea 
-                        value={form.description} 
-                        onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                        placeholder="ওষুধের কার্যকারিতা, সেবনবিধি, সতর্কতা ইত্যাদি লিখুন..." 
-                        rows={6}
-                        className="font-sans text-xs leading-relaxed"
-                      />
-                    </div>
+                    <MedicalSectionEditor 
+                      value={form.description} 
+                      onChange={(htmlVal) => setForm({ ...form, description: htmlVal })} 
+                    />
 
                     <SpecificationEditor specs={specs} onChange={setSpecs} />
                     <VariantEditor variants={variants} onChange={setVariants} />
