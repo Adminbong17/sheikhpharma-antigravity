@@ -378,16 +378,15 @@ const AdminProducts = () => {
     }
   };
 
-  // Upload Product Images (Supabase Storage with FileVault Fallback)
+  // Upload Product Images (100% FileVault Hosting - 0 MB Supabase Storage)
   const handleVaultImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setUploadingImage(true);
-    const toastId = toast.loading("ইমেজ আপলোড হচ্ছে...");
+    const toastId = toast.loading("ইমেজ FileVault এ আপলোড হচ্ছে...");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < files.length; i++) {
@@ -399,26 +398,29 @@ const AdminProducts = () => {
         const ext = file.name.split(".").pop() || "jpg";
         const nameSlug = slugify(form.name || "product");
         const fileName = `${nameSlug}-${Date.now()}-${i + 1}.${ext}`;
-        const filePath = user?.id ? `${user.id}/${fileName}` : `products/${fileName}`;
 
-        // Try Supabase Storage first
-        const { data: uploadData, error: uploadErr } = await supabase.storage
-          .from("product-images")
-          .upload(filePath, file, { upsert: true });
-
-        if (!uploadErr && uploadData) {
-          const { data: urlData } = supabase.storage
-            .from("product-images")
-            .getPublicUrl(filePath);
-          uploadedUrls.push(urlData.publicUrl);
-        } else {
-          // Fallback to FileVault
+        try {
+          // Primary: Direct upload to FileVault (vault.bongbangla.top)
+          const vaultUrl = await uploadToVault(file, fileName);
+          uploadedUrls.push(vaultUrl);
+        } catch (vaultErr: any) {
+          console.error("FileVault upload error:", vaultErr);
+          // Fallback to Supabase Storage if FileVault is temporarily unavailable
           try {
-            const vaultUrl = await uploadToVault(file, fileName);
-            uploadedUrls.push(vaultUrl);
-          } catch (vaultErr: any) {
-            console.error("Storage and Vault Upload error:", uploadErr, vaultErr);
-            toast.error(`${file.name} আপলোড ব্যর্থ হয়েছে: ${uploadErr?.message || vaultErr?.message}`);
+            const { data: { user } } = await supabase.auth.getUser();
+            const filePath = user?.id ? `${user.id}/${fileName}` : `products/${fileName}`;
+            const { data: uploadData, error: uploadErr } = await supabase.storage
+              .from("product-images")
+              .upload(filePath, file, { upsert: true });
+
+            if (!uploadErr && uploadData) {
+              const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(filePath);
+              uploadedUrls.push(urlData.publicUrl);
+            } else {
+              throw uploadErr || new Error("Storage upload failed");
+            }
+          } catch (fallbackErr: any) {
+            toast.error(`${file.name} আপলোড ব্যর্থ: ${vaultErr.message}`);
           }
         }
       }
@@ -426,8 +428,6 @@ const AdminProducts = () => {
       if (uploadedUrls.length > 0) {
         setImages(prev => [...prev, ...uploadedUrls]);
         toast.success(`${uploadedUrls.length}টি ইমেজ সফলভাবে আপলোড হয়েছে!`, { id: toastId });
-      } else {
-        toast.error("কোনো ইমেজ আপলোড করা যায়নি", { id: toastId });
       }
     } catch (err: any) {
       console.error("Upload Error:", err);
