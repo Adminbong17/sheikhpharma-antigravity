@@ -191,13 +191,15 @@ const ProductPage = () => {
   // If a variant is selected, use its price_adjustment as the actual price (not an addition)
   const hasSelectedVariant = Object.keys(selectedVariants).length > 0;
   const medPricing = getMedicinePricing(product);
-  const canBuyPcs = !!(medPricing?.discountedUnitPrice && medPricing.pcsPerStrip);
+  const canBuyPcs = !!(medPricing?.isTabletOrCapsule && medPricing.discountedUnitPrice && medPricing.stripPrice);
   const unitMode: "strip" | "pcs" = canBuyPcs ? buyUnit : "strip";
   const stripDiscountPct = getStripDiscountPercent(qty);
-  const unitBasePrice =
-    unitMode === "pcs" && medPricing?.discountedUnitPrice
-      ? medPricing.discountedUnitPrice
-      : applyDiscount(product.price, stripDiscountPct);
+  const currentStripPrice = medPricing?.stripPrice || product.price;
+  const unitBasePrice = canBuyPcs
+    ? (unitMode === "pcs"
+        ? medPricing!.discountedUnitPrice!
+        : applyDiscount(currentStripPrice, stripDiscountPct))
+    : applyDiscount(product.price, 10);
   const effectivePrice = hasSelectedVariant
     ? Object.values(selectedVariants).reduce((_, v) => v.adjustment, unitBasePrice)
     : unitBasePrice;
@@ -367,25 +369,16 @@ const ProductPage = () => {
 
             {(() => {
               const med = getMedicinePricing(product);
-              if (med) {
+              if (med && med.isTabletOrCapsule) {
                 return (
-                  <div className="space-y-2 rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
-                    {/* Unit price with 10% discount */}
-                    {med.unitPrice && med.discountedUnitPrice && (
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-muted-foreground">{b("ইউনিট মূল্য:", "Unit Price:")}</span>
-                        <span className="text-sm text-muted-foreground line-through">{formatPrice(med.unitPrice)}</span>
-                        <span className="text-lg font-bold text-primary">{formatPrice(med.discountedUnitPrice)}</span>
-                        <Badge className="bg-destructive text-destructive-foreground">10% {b("ছাড়", "OFF")}</Badge>
-                      </div>
-                    )}
+                  <div className="space-y-2.5 rounded-xl border-2 border-primary/30 bg-primary/5 p-3.5 shadow-sm">
                     {/* Strip price */}
                     {med.stripPrice && (
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-muted-foreground">{b("স্ট্রিপ মূল্য:", "Strip Price:")}</span>
+                        <span className="text-sm font-semibold text-foreground">{b("স্ট্রিপ মূল্য:", "Strip Price:")}</span>
                         <span className="text-sm text-muted-foreground line-through">{formatPrice(med.stripPrice)}</span>
                         <span className="text-2xl font-bold text-primary">{formatPrice(applyDiscount(med.stripPrice, stripDiscountPct))}</span>
-                        <Badge className="bg-destructive text-destructive-foreground">{stripDiscountPct}% {b("ছাড়", "OFF")}</Badge>
+                        <Badge className="bg-destructive text-destructive-foreground text-xs">{stripDiscountPct}% {b("ছাড়", "OFF")}</Badge>
                         {med.pcsPerStrip && (
                           <span className="rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-accent-foreground">
                             ({formatNumber(med.pcsPerStrip)} {b("পিস/স্ট্রিপ", "pcs/strip")})
@@ -394,12 +387,23 @@ const ProductPage = () => {
                       </div>
                     )}
 
+                    {/* Unit price with 10% discount */}
+                    {med.unitPrice && med.discountedUnitPrice && (
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">{b("ইউনিট মূল্য:", "Unit Price:")}</span>
+                        <span className="text-sm text-muted-foreground line-through">{formatPrice(med.unitPrice)}</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(med.discountedUnitPrice)}</span>
+                        <Badge className="bg-destructive text-destructive-foreground text-xs">10% {b("ছাড়", "OFF")}</Badge>
+                        <span className="text-xs text-muted-foreground">({b("প্রতি পিস", "per piece")})</span>
+                      </div>
+                    )}
+
                     {/* Pack size & price */}
                     {med.packSizeLabel && med.packPrice && (
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-muted-foreground">{b("প্যাক সাইজ:", "Pack Size:")}</span>
-                        <span className="text-sm font-semibold">{med.packSizeLabel}{med.totalPcsPerPack ? ` (${formatNumber(med.totalPcsPerPack)} pcs)` : ""}</span>
-                        <span className="text-sm font-bold text-primary">{formatPrice(med.packPrice)}</span>
+                      <div className="flex items-baseline gap-2 flex-wrap pt-1.5 border-t border-primary/10">
+                        <span className="text-xs font-medium text-muted-foreground">{b("বক্স / প্যাক:", "Box / Pack:")}</span>
+                        <span className="text-xs font-semibold">{med.packSizeLabel}{med.totalPcsPerPack ? ` (${formatNumber(med.totalPcsPerPack)} pcs)` : ""}</span>
+                        <span className="text-xs font-bold text-primary">{formatPrice(med.packPrice)}</span>
                       </div>
                     )}
                   </div>
@@ -462,21 +466,23 @@ const ProductPage = () => {
 
             {/* Quantity + Buttons moved above description */}
             <div className="space-y-3 pt-2">
-              {canBuyPcs && (
+              {canBuyPcs && medPricing && (
                 <div>
                   <span className="text-sm font-medium text-foreground">{b("হিসেবে কিনুন", "Buy as")}</span>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     <button
+                      type="button"
                       onClick={() => setBuyUnit("strip")}
-                      className={`rounded-md border px-3 py-1.5 text-sm transition ${unitMode === "strip" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:border-primary hover:text-primary"}`}
+                      className={`rounded-md border px-3 py-1.5 text-sm transition ${unitMode === "strip" ? "border-primary bg-primary/10 text-primary font-semibold shadow-sm" : "hover:border-primary hover:text-primary"}`}
                     >
-                      {b("স্ট্রিপ", "Strip")} ({medPricing?.pcsPerStrip} {b("পিস", "pcs")}) — {formatPrice(medPricing!.stripPrice || product.price)}
+                      {b("স্ট্রিপ", "Strip")} ({medPricing.pcsPerStrip} {b("পিস", "pcs")}) — {formatPrice(applyDiscount(medPricing.stripPrice || product.price, stripDiscountPct))}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setBuyUnit("pcs")}
-                      className={`rounded-md border px-3 py-1.5 text-sm transition ${unitMode === "pcs" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:border-primary hover:text-primary"}`}
+                      className={`rounded-md border px-3 py-1.5 text-sm transition ${unitMode === "pcs" ? "border-primary bg-primary/10 text-primary font-semibold shadow-sm" : "hover:border-primary hover:text-primary"}`}
                     >
-                      {b("পিস", "Piece")} (1 {b("পিস", "pcs")}) — {formatPrice(medPricing!.discountedUnitPrice!)}
+                      {b("পিস", "Piece")} (1 {b("পিস", "pc")}) — {formatPrice(medPricing.discountedUnitPrice!)}
                     </button>
                   </div>
                 </div>
