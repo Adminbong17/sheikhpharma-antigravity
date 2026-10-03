@@ -346,6 +346,38 @@ const ProductPage = () => {
               <WishlistButton productId={product.id} size="md" className="shrink-0 mt-1" />
             </div>
 
+            {/* Generic & Manufacturer / Brand Metadata */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5 pb-1">
+              {product.generic_name && (
+                <Link
+                  to={`/search?q=${encodeURIComponent(product.generic_name)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
+                >
+                  <span className="font-semibold">{b("জেনেরিক:", "Generic:")}</span>
+                  <span>{product.generic_name}</span>
+                </Link>
+              )}
+
+              {brand && (
+                <Link
+                  to={`/brand/${brand.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium bg-muted hover:bg-muted/80 text-foreground px-2.5 py-1 rounded-md border transition-colors group"
+                >
+                  {brand.logo_url && (
+                    <img src={brand.logo_url} alt={brand.name} className="h-4 w-4 object-contain rounded-xs" />
+                  )}
+                  <span className="text-muted-foreground">{b("কোম্পানি:", "Brand:")}</span>
+                  <span className="font-semibold group-hover:text-primary transition-colors">{brand.name}</span>
+                </Link>
+              )}
+
+              {product.requires_prescription && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 border-amber-500 text-amber-600 bg-amber-50/50">
+                  {b("⚠️ প্রেসক্রিপশন আবশ্যক", "⚠️ Rx Required")}
+                </Badge>
+              )}
+            </div>
+
             {product.is_qmall_verified && (
               <Link to="/qmall" className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1 w-fit hover:bg-primary/20 transition-colors">
                 <BadgeCheck className="h-4 w-4 text-primary fill-primary/20" />
