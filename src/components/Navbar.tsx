@@ -178,16 +178,26 @@ const SearchInputBox = ({
                   ? Math.round(((item.original_price - item.price) / item.original_price) * 100)
                   : 0;
 
+              const targetUrl = `/product/${item.slug || item.id}`;
+
+              const handleItemClick = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDropdown(false);
+                setShowHistory(false);
+                saveSearchTerm(query.trim());
+                setQuery("");
+                navigate(targetUrl);
+              };
+
               return (
-                <Link
+                <div
                   key={item.id}
-                  to={`/product/${item.slug || item.id}`}
-                  className="flex items-center gap-3.5 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors group"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    saveSearchTerm(query.trim());
-                    setQuery("");
-                  }}
+                  role="button"
+                  tabIndex={0}
+                  onMouseDown={handleItemClick}
+                  onClick={handleItemClick}
+                  className="flex items-center gap-3.5 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors group cursor-pointer"
                 >
                   {item.image_url ? (
                     <img
@@ -227,7 +237,7 @@ const SearchInputBox = ({
                     </div>
                   </div>
                   <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors shrink-0" />
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -235,8 +245,19 @@ const SearchInputBox = ({
           <button
             type="button"
             className="w-full px-4 py-3 text-center text-xs sm:text-sm font-bold text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900"
-            onClick={() => {
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setShowDropdown(false);
+              setShowHistory(false);
+              saveSearchTerm(query.trim());
+              navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowDropdown(false);
+              setShowHistory(false);
               saveSearchTerm(query.trim());
               navigate(`/search?q=${encodeURIComponent(query.trim())}`);
             }}
@@ -266,6 +287,11 @@ const SearchInputBox = ({
             {history.map((term: string) => (
               <div
                 key={term}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleHistoryClick(term);
+                }}
                 onClick={() => handleHistoryClick(term)}
                 className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left group"
               >
@@ -296,7 +322,8 @@ const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<string[]>(getSearchHistory());
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const desktopWrapperRef = useRef<HTMLDivElement>(null);
+  const mobileWrapperRef = useRef<HTMLDivElement>(null);
   const { formatPrice } = useCurrency();
   const { data: siteSettings } = useSiteSettings();
   const { t } = useLanguage();
@@ -315,7 +342,9 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      const isInsideDesktop = desktopWrapperRef.current?.contains(e.target as Node);
+      const isInsideMobile = mobileWrapperRef.current?.contains(e.target as Node);
+      if (!isInsideDesktop && !isInsideMobile) {
         setShowDropdown(false);
         setShowHistory(false);
       }
@@ -335,7 +364,7 @@ const Navbar = () => {
     }
   };
 
-  const searchProps = {
+  const baseSearchProps = {
     siteSettings,
     query,
     setQuery,
@@ -344,7 +373,6 @@ const Navbar = () => {
     suggestions,
     isFetching,
     handleSubmit,
-    wrapperRef,
     navigate,
     formatPrice,
     showHistory,
@@ -386,7 +414,7 @@ const Navbar = () => {
 
           {/* Center Integrated Search Bar */}
           <div className="flex-1 max-w-2xl">
-            <SearchInputBox {...searchProps} />
+            <SearchInputBox {...baseSearchProps} wrapperRef={desktopWrapperRef} />
           </div>
 
           {/* Right Action Icons (Language Toggle, Profile & Cart) */}
@@ -423,7 +451,7 @@ const Navbar = () => {
 
           {/* Mobile Search Row: Integrated cleanly without extra cards */}
           <div>
-            <SearchInputBox {...searchProps} />
+            <SearchInputBox {...baseSearchProps} wrapperRef={mobileWrapperRef} />
           </div>
         </div>
       </div>

@@ -37,6 +37,13 @@ const ProductPage = () => {
   const [msgOpen, setMsgOpen] = useState(false);
   const { data: marketingSettings } = useMarketingSettings();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    setSelectedImage(0);
+    setQty(1);
+    setSelectedVariants({});
+  }, [slug]);
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", slug],
     queryFn: async () => {
