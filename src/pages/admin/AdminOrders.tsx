@@ -50,6 +50,7 @@ interface Order {
   carrybee_status?: string | null;
   pathao_consignment_id?: string | null;
   pathao_status?: string | null;
+  is_pos_sale?: boolean | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -117,6 +118,7 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "online" | "pos">("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [sendingToSteadfast, setSendingToSteadfast] = useState(false);
   const [sendingToCarryBee, setSendingToCarryBee] = useState(false);
@@ -560,10 +562,18 @@ const AdminOrders = () => {
   };
 
   const filtered = orders.filter(o => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || String(o.order_number).includes(q) || o.customer_email?.toLowerCase().includes(q);
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      String(o.order_number ?? "").includes(q) ||
+      o.customer_name?.toLowerCase().includes(q) ||
+      o.customer_phone?.toLowerCase().includes(q) ||
+      o.customer_email?.toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesSource =
+      sourceFilter === "all" ||
+      (sourceFilter === "pos" ? Boolean(o.is_pos_sale) : !o.is_pos_sale);
+    return matchesSearch && matchesStatus && matchesSource;
   });
 
   return (
@@ -584,11 +594,19 @@ const AdminOrders = () => {
           </Button>
           <ManualOrderDialog onOrderCreated={fetchOrders} />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-9" />
+            <Input placeholder="Search name, phone, order #..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-9" />
           </div>
+          <Select value={sourceFilter} onValueChange={(v: "all" | "online" | "pos") => setSourceFilter(v)}>
+            <SelectTrigger className="w-[125px] h-9"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Channels</SelectItem>
+              <SelectItem value="online">🌐 Online</SelectItem>
+              <SelectItem value="pos">🏪 POS Sales</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[110px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -600,6 +618,7 @@ const AdminOrders = () => {
             title="Orders"
             columns={[
               { header: "Order #", accessor: (o) => String(o.order_number ?? 0).padStart(11, "0") },
+              { header: "Source", accessor: (o) => o.is_pos_sale ? "POS" : "Online" },
               { header: "Customer", accessor: (o) => o.customer_name || "—" },
               { header: "Phone", accessor: (o) => o.customer_phone || "—" },
               { header: "Status", accessor: (o) => o.status },
@@ -655,13 +674,18 @@ const AdminOrders = () => {
               className="rounded-lg border bg-card p-3 space-y-2 active:bg-muted/50 cursor-pointer"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Checkbox
                     checked={selectedIds.has(o.id)}
                     onCheckedChange={() => toggleSelect(o.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
                   <span className="font-mono text-xs font-medium">#{String(o.order_number ?? 0).padStart(11, '0')}</span>
+                  {o.is_pos_sale && (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] px-1 py-0 font-sans font-medium">
+                      🏪 POS
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</span>
               </div>
@@ -731,7 +755,16 @@ const AdminOrders = () => {
                       onCheckedChange={() => toggleSelect(o.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{String(o.order_number ?? 0).padStart(11, '0')}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span>#{String(o.order_number ?? 0).padStart(11, '0')}</span>
+                      {o.is_pos_sale && (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] px-1 py-0 font-sans font-medium">
+                          🏪 POS
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge className={`${statusColors[o.status]} border-none`}>{o.status}</Badge>
                   </TableCell>

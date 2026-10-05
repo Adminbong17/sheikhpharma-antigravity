@@ -13,11 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   Search, Plus, Minus, Trash2, Pause, FolderOpen, Printer,
-  ShoppingCart, Banknote, X, ScanLine,
+  ShoppingCart, Banknote, X, ScanLine, Receipt, Eye, RefreshCw,
+  Clock, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeBdPhone } from "@/lib/phone";
 import { logActivity } from "@/lib/logActivity";
+import { sendToCashBook } from "@/lib/cashbook";
 
 type Product = {
   id: string;
@@ -72,6 +74,13 @@ export default function PosRegister({ vendorId, scope }: Props) {
   const [holdDialog, setHoldDialog] = useState(false);
   const [heldList, setHeldList] = useState<any[]>([]);
   const [heldLoading, setHeldLoading] = useState(false);
+  
+  // Recent completed sales state
+  const [recentOpen, setRecentOpen] = useState(false);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [recentLoading, setRecentLoading] = useState(false);
+  const [selectedSaleDetail, setSelectedSaleDetail] = useState<any | null>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const [activeSession, setActiveSession] = useState<any | null>(null);
   const [receiptWidth, setReceiptWidth] = useState<"80mm" | "56mm">(() => {
@@ -80,21 +89,54 @@ export default function PosRegister({ vendorId, scope }: Props) {
   });
 
   // ---- Load active register session ----
-  useEffect(() => {
+  const loadActiveSession = async () => {
     if (!user) return;
-    (async () => {
+    try {
       let q = supabase
         .from("pos_register_sessions")
         .select("*")
         .eq("status", "open")
-        .eq("opened_by", user.id)
         .order("opened_at", { ascending: false })
         .limit(1);
       if (vendorId) q = q.eq("vendor_id", vendorId);
       const { data } = await q;
-      if (data && data[0]) setActiveSession(data[0]);
-    })();
+      if (data && data[0]) {
+        setActiveSession(data[0]);
+      }
+    } catch (e) {
+      console.error("Session load error:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadActiveSession();
   }, [user, vendorId]);
+
+  // ---- Load recent POS sales ----
+  const loadRecentSales = async () => {
+    setRecentLoading(true);
+    try {
+      let q = supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("is_pos_sale", true)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (vendorId) q = q.eq("vendor_id", vendorId);
+      const { data, error } = await q;
+      if (!error && data) {
+        setRecentSales(data);
+      }
+    } catch (e) {
+      console.error("loadRecentSales error:", e);
+    } finally {
+      setRecentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRecentSales();
+  }, [vendorId]);
 
   // ---- Search products (debounced) ----
   useEffect(() => {
@@ -141,7 +183,7 @@ export default function PosRegister({ vendorId, scope }: Props) {
     return () => clearTimeout(t);
   }, [search, vendorId]);
 
-  // ---- Cart helpers ----
+  // ---- Cart management ----
   const addToCart = (p: Product) => {
     setCart((c) => {
       const ix = c.findIndex((it) => it.product_id === p.id);
@@ -174,27 +216,27 @@ export default function PosRegister({ vendorId, scope }: Props) {
 
   // ---- Submit sale ----
   const completeSale = async () => {
-    if (!cart.length) return toast.error("Cart is empty");
-    if (!user) return toast.error("Login required");
+    if (!cart.length) return toast.error("কার্ট খালি রয়েছে");
+    if (!user) return toast.error("লগইন আবশ্যক");
     if (paymentMethod === "cash" && (Number(amountReceived) || 0) < total) {
-      return toast.error("Insufficient cash received");
+      return toast.error("গৃহীত নগদ টাকা মোট মূল্যের চেয়ে কম");
     }
     if (["bkash", "nagad", "rocket"].includes(paymentMethod) && !trxId.trim()) {
-      return toast.error("Enter transaction ID");
+      return toast.error("ট্রানজেকশন আইডি (TrxID) লিখুন");
     }
     if (paymentMethod === "due" && !customerPhone.trim()) {
-      return toast.error("Customer phone required for due sale");
+      return toast.error("বাকিতে বিক্রয়ের জন্য কাস্টমারের ফোন নম্বর আবশ্যক");
     }
 
     setSubmitting(true);
     try {
       const isDue = paymentMethod === "due";
       const orderInsert: any = {
-        user_id: user.id,
+        user_id: user?.id || null,
         status: isDue ? "pending" : "delivered",
+        payment_status: isDue ? "unpaid" : "paid",
         total,
         payment_method: paymentMethod,
-        
         transaction_id: ["bkash", "nagad", "rocket"].includes(paymentMethod) ? (trxId.trim() || null) : null,
         customer_name: customerName.trim() || "Walk-in Customer",
         customer_phone: customerPhone ? normalizeBdPhone(customerPhone) : null,
@@ -241,6 +283,23 @@ export default function PosRegister({ vendorId, scope }: Props) {
         }
       }
 
+      // Record in Cash Book for paid sales
+      if (!isDue && total > 0) {
+        try {
+          await sendToCashBook({
+            type: "cash_in",
+            amount: total,
+            transaction_id: `POS-${order.order_number || order.id}`,
+            description: `POS Sale #${order.order_number} (${customerName.trim() || "Walk-in Customer"})`,
+            category: "POS Sales",
+            transaction_date: new Date().toISOString(),
+            created_by: user.id,
+          });
+        } catch (cbErr) {
+          console.warn("CashBook note:", cbErr);
+        }
+      }
+
       // Update register session counters
       if (activeSession) {
         await supabase
@@ -257,13 +316,22 @@ export default function PosRegister({ vendorId, scope }: Props) {
         });
       }
 
+      // Prepend to live recent sales list
+      setRecentSales((prev) => [
+        {
+          ...order,
+          order_items: itemsInsert.map((item, idx) => ({ ...item, id: `pos-${Date.now()}-${idx}` })),
+        },
+        ...prev,
+      ]);
+
       logActivity({ action: "pos_sale", details: `Order #${order.order_number} • ৳${total}` });
-      toast.success(`Sale complete • Order #${order.order_number}`);
+      toast.success(`বিক্রয় সফল হয়েছে! Order #${order.order_number}`);
 
       // Print receipt (80mm or 56mm based on preference)
       printReceipt(order, cart, { subtotal, discount, total, paymentMethod, amountReceived, change }, receiptWidth);
 
-      // Reset
+      // Reset cart and inputs
       setCart([]);
       setDiscount(0);
       setCustomerName("");
@@ -273,14 +341,15 @@ export default function PosRegister({ vendorId, scope }: Props) {
       setPaymentMethod("cash");
       setPaymentDialog(false);
     } catch (err: any) {
-      toast.error(err.message || "Sale failed");
+      console.error("Sale complete error:", err);
+      toast.error("বিক্রয় সংরক্ষণ ব্যর্থ হয়েছে: " + (err.message || "Unknown error"));
     }
     setSubmitting(false);
   };
 
   // ---- Hold sale ----
   const holdSale = async () => {
-    if (!cart.length) return toast.error("Nothing to hold");
+    if (!cart.length) return toast.error("হোল্ড করার মতো কোনো পণ্য নেই");
     if (!user) return;
     const ref = `HOLD-${Date.now().toString(36).toUpperCase()}`;
     const { error } = await supabase.from("pos_held_sales").insert({
@@ -295,7 +364,7 @@ export default function PosRegister({ vendorId, scope }: Props) {
       total,
     });
     if (error) return toast.error(error.message);
-    toast.success(`Held • ${ref}`);
+    toast.success(`হোল্ড সম্পন্ন • ${ref}`);
     setCart([]);
     setDiscount(0);
     setCustomerName("");
@@ -324,22 +393,22 @@ export default function PosRegister({ vendorId, scope }: Props) {
     setCustomerPhone(h.customer_phone || "");
     await supabase.from("pos_held_sales").delete().eq("id", h.id);
     setHoldDialog(false);
-    toast.success("Resumed held sale");
+    toast.success("হোল্ড করা সেল কার্টে ফিরিয়ে আনা হয়েছে");
   };
 
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr,420px] h-[calc(100vh-120px)]">
       {/* LEFT — products grid */}
-      <Card className="flex flex-col overflow-hidden">
-        <div className="border-b p-3 flex gap-2 items-center">
-          <ScanLine className="h-5 w-5 text-muted-foreground" />
+      <Card className="flex flex-col overflow-hidden shadow-xs">
+        <div className="border-b p-3 flex flex-wrap gap-2 items-center bg-card">
+          <ScanLine className="h-5 w-5 text-muted-foreground shrink-0" />
           <Input
             ref={searchRef}
             autoFocus
-            placeholder="Scan barcode or search product…"
+            placeholder="বারকোড স্ক্যান বা ওষুধের নাম সার্চ করুন…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-w-[180px] h-9 text-xs sm:text-sm"
           />
           <select
             value={receiptWidth}
@@ -351,42 +420,56 @@ export default function PosRegister({ vendorId, scope }: Props) {
             className="h-9 rounded-md border bg-background px-2 text-xs"
             title="Receipt paper width"
           >
-            <option value="80mm">80mm</option>
-            <option value="56mm">56mm</option>
+            <option value="80mm">80mm প্রিন্ট</option>
+            <option value="56mm">56mm প্রিন্ট</option>
           </select>
-          <Button variant="outline" size="sm" onClick={openHeldList}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => { setRecentOpen(true); loadRecentSales(); }}
+            className="h-9 text-xs gap-1.5 shrink-0 bg-primary/5 hover:bg-primary/10 border-primary/30 text-primary font-medium"
+          >
+            <Receipt className="h-4 w-4" /> 
+            <span>সেলস হিস্ট্রি</span>
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-primary text-primary-foreground font-bold">
+              {recentSales.length}
+            </Badge>
+          </Button>
+          <Button variant="outline" size="sm" onClick={openHeldList} className="h-9 text-xs shrink-0">
             <FolderOpen className="h-4 w-4 mr-1" /> Held
           </Button>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3">
-            {loading && <div className="col-span-full text-center text-sm text-muted-foreground py-8">Searching…</div>}
+        <ScrollArea className="flex-1 bg-muted/10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-3">
+            {loading && <div className="col-span-full text-center text-sm text-muted-foreground py-8">ওষুধ খোঁজা হচ্ছে…</div>}
             {!loading && products.length === 0 && (
-              <div className="col-span-full text-center text-sm text-muted-foreground py-8">No products</div>
+              <div className="col-span-full text-center text-sm text-muted-foreground py-8">কোনো ওষুধ পাওয়া যায়নি</div>
             )}
             {products.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => addToCart(p)}
-                className="group rounded-md border bg-card p-2 text-left hover:border-primary hover:shadow transition active:scale-[.98]"
+                className="group rounded-lg border bg-card p-2.5 text-left hover:border-primary hover:shadow-md transition-all active:scale-[.98] flex flex-col justify-between"
               >
-                <div className="aspect-square rounded bg-muted overflow-hidden mb-2">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <Package className="h-8 w-8" />
-                    </div>
-                  )}
+                <div>
+                  <div className="aspect-square rounded-md bg-muted/40 overflow-hidden mb-2 relative">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                        <Package className="h-8 w-8" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold line-clamp-2 mb-1 text-foreground leading-snug">{p.name}</p>
                 </div>
-                <p className="text-xs font-medium line-clamp-2 mb-1">{p.name}</p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-1 border-t border-border/40 mt-1">
                   <span className="text-sm font-bold text-primary">৳{p.price}</span>
                   {typeof p.stock === "number" && (
-                    <Badge variant={p.stock > 0 ? "secondary" : "destructive"} className="text-[10px] h-5">
-                      {p.stock > 0 ? `${p.stock} left` : "Out"}
+                    <Badge variant={p.stock > 0 ? "secondary" : "destructive"} className="text-[10px] h-4 px-1 font-medium">
+                      {p.stock > 0 ? `${p.stock} পিস` : "স্টক নেই"}
                     </Badge>
                   )}
                 </div>
@@ -397,103 +480,143 @@ export default function PosRegister({ vendorId, scope }: Props) {
       </Card>
 
       {/* RIGHT — cart */}
-      <Card className="flex flex-col overflow-hidden">
-        <div className="border-b p-3 flex items-center justify-between">
+      <Card className="flex flex-col overflow-hidden shadow-xs border-primary/20">
+        <div className="border-b p-3 bg-muted/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="font-semibold">Cart ({cart.length})</span>
+            <ShoppingCart className="h-4 w-4 text-primary" />
+            <h3 className="font-bold text-sm">POS Cart ({cart.reduce((s, it) => s + it.quantity, 0)})</h3>
           </div>
-          {activeSession && (
-            <Badge variant="outline" className="text-xs">
-              Session active
-            </Badge>
+          {cart.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCart([])}
+              className="h-7 text-xs text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> কার্ট ক্লিয়ার
+            </Button>
           )}
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-3 space-y-2">
-            {cart.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground py-12">
-                Cart empty — scan or click a product
-              </div>
-            )}
+        {/* Cart items scroll */}
+        <ScrollArea className="flex-1 p-3">
+          {cart.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-xs text-center space-y-2">
+              <ShoppingCart className="h-8 w-8 text-muted-foreground/40" />
+              <p>কার্টে কোনো ওষুধ যোগ করা হয়নি।<br />বামে থাকা ওষুধে ক্লিক করুন বা বারকোড স্ক্যান করুন।</p>
+            </div>
+          )}
+          <div className="space-y-2">
             {cart.map((it) => (
-              <div key={it.product_id} className="flex gap-2 items-start border rounded-md p-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium line-clamp-1">{it.product_name}</p>
-                  <p className="text-xs text-muted-foreground">৳{it.price} × {it.quantity} = ৳{it.price * it.quantity}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(it.product_id, it.quantity - 1)}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <Input
-                      type="number"
-                      value={it.quantity}
-                      onChange={(e) => updateQty(it.product_id, Number(e.target.value) || 0)}
-                      className="h-7 w-14 text-center"
-                    />
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(it.product_id, it.quantity + 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
+              <div
+                key={it.product_id}
+                className="flex items-center justify-between p-2 rounded-lg border bg-card text-xs shadow-2xs"
+              >
+                <div className="flex-1 pr-2 min-w-0">
+                  <p className="font-semibold text-foreground truncate">{it.product_name}</p>
+                  <p className="text-muted-foreground">৳{it.price} × {it.quantity} = <strong className="text-primary">৳{(it.price * it.quantity).toFixed(2)}</strong></p>
                 </div>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeItem(it.product_id)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => updateQty(it.product_id, it.quantity - 1)}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="w-7 text-center font-bold">{it.quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => updateQty(it.product_id, it.quantity + 1)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:bg-destructive/10 ml-1"
+                    onClick={() => removeItem(it.product_id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </ScrollArea>
 
-        {/* Customer + totals */}
-        <div className="border-t p-3 space-y-2">
+        {/* Cart summary & Checkout footer */}
+        <div className="border-t p-3 bg-muted/20 space-y-3">
+          {/* Customer fields */}
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              placeholder="Customer name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="h-8 text-sm"
-            />
-            <Input
-              placeholder="Phone (01…)"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Subtotal</span>
-            <span className="font-medium">৳{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Discount</span>
-            <Input
-              type="number"
-              value={discount || ""}
-              onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-              className="h-7 w-24 text-right"
-              placeholder="0"
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between text-base font-bold">
-            <span>Total</span>
-            <span className="text-primary">৳{total.toFixed(2)}</span>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">কাস্টমার নাম</Label>
+              <Input
+                placeholder="Walk-in Customer"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="h-8 text-xs bg-background"
+              />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">ফোন নম্বর (ঐচ্ছিক)</Label>
+              <Input
+                placeholder="01XXXXXXXXX"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="h-8 text-xs bg-background"
+              />
+            </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={holdSale} disabled={!cart.length} className="flex-1">
-              <Pause className="h-4 w-4 mr-1" /> Hold
+          {/* Discount & Totals */}
+          <div className="space-y-1.5 pt-1 text-xs border-t border-border/40">
+            <div className="flex justify-between text-muted-foreground">
+              <span>সাবটোটাল</span>
+              <span>৳{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">ডিসকাউন্ট (৳)</span>
+              <Input
+                type="number"
+                min={0}
+                value={discount || ""}
+                onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                placeholder="0"
+                className="h-7 w-20 text-xs text-right bg-background"
+              />
+            </div>
+            <Separator />
+            <div className="flex justify-between items-center text-sm font-bold pt-0.5">
+              <span>সর্বমোট (Total)</span>
+              <span className="text-primary text-base">৳{total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!cart.length}
+              onClick={holdSale}
+              className="text-xs h-9"
+            >
+              <Pause className="h-3.5 w-3.5 mr-1" /> হোল্ড করুন
             </Button>
             <Button
+              size="sm"
+              disabled={!cart.length}
               onClick={() => {
-                setAmountReceived(total.toFixed(2));
+                setAmountReceived(String(total));
                 setPaymentDialog(true);
               }}
-              disabled={!cart.length}
-              className="flex-1"
+              className="text-xs h-9 bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90"
             >
-              <Banknote className="h-4 w-4 mr-1" /> Pay ৳{total.toFixed(0)}
+              <Banknote className="h-4 w-4 mr-1" /> পেমেন্ট ও সেল
             </Button>
           </div>
         </div>
@@ -503,93 +626,102 @@ export default function PosRegister({ vendorId, scope }: Props) {
       <Dialog open={paymentDialog} onOpenChange={setPaymentDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Payment — ৳{total.toFixed(2)}</DialogTitle>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-primary" />
+              পেমেন্ট গ্রহণ ও বিক্রয় সম্পন্ন
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label className="mb-2 block">Payment Method</Label>
+          <div className="space-y-4 py-2 text-xs">
+            <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">পরিশোধযোগ্য সর্বমোট</p>
+                <p className="text-xl font-black text-primary">৳{total.toFixed(2)}</p>
+              </div>
+              <Badge variant="outline" className="text-xs font-semibold px-2 py-1">
+                {cart.reduce((s, it) => s + it.quantity, 0)} টি আইটেম
+              </Badge>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">পেমেন্ট মাধ্যম নির্বাচন করুন:</Label>
               <div className="grid grid-cols-3 gap-2">
-                {(["cash", "bkash", "nagad", "rocket", "card", "due"] as const).map((m) => (
-                  <Button
-                    key={m}
+                {[
+                  { id: "cash", label: "💵 ক্যাশ (Cash)" },
+                  { id: "bkash", label: "📱 বিকাশ (bKash)" },
+                  { id: "nagad", label: "📱 নগদ (Nagad)" },
+                  { id: "rocket", label: "📱 রকেট (Rocket)" },
+                  { id: "card", label: "💳 কার্ড (Card)" },
+                  { id: "due", label: "⏳ বাকি (Due)" },
+                ].map((pm) => (
+                  <button
+                    key={pm.id}
                     type="button"
-                    size="sm"
-                    variant={paymentMethod === m ? "default" : "outline"}
-                    onClick={() => setPaymentMethod(m)}
-                    className="capitalize"
+                    onClick={() => setPaymentMethod(pm.id as any)}
+                    className={`p-2 rounded-md border text-center font-medium transition-all ${
+                      paymentMethod === pm.id
+                        ? "bg-primary text-primary-foreground border-primary font-bold shadow-xs"
+                        : "bg-background hover:bg-muted"
+                    }`}
                   >
-                    {m}
-                  </Button>
+                    {pm.label}
+                  </button>
                 ))}
               </div>
             </div>
 
+            {/* Cash details */}
             {paymentMethod === "cash" && (
-              <>
-                <div>
-                  <Label>Cash Received</Label>
+              <div className="space-y-3 p-3 rounded-lg border bg-muted/20">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs font-semibold">কাস্টমার থেকে প্রাপ্ত টাকা (Received):</Label>
                   <Input
                     type="number"
+                    min={0}
                     value={amountReceived}
                     onChange={(e) => setAmountReceived(e.target.value)}
-                    autoFocus
+                    className="w-32 h-8 text-right font-bold text-xs bg-background"
                   />
-                  <div className="grid grid-cols-4 gap-1 mt-2">
-                    {[100, 500, 1000, 1500].map((v) => (
-                      <Button key={v} size="sm" variant="outline" onClick={() => setAmountReceived(String(v))}>
-                        ৳{v}
-                      </Button>
-                    ))}
-                  </div>
                 </div>
-                <div className="rounded-md bg-muted p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Change to return</p>
-                  <p className="text-2xl font-bold text-primary">৳{change.toFixed(2)}</p>
+                <div className="flex items-center justify-between pt-1 border-t text-xs">
+                  <span className="text-muted-foreground">ফেরত দিতে হবে (Change):</span>
+                  <span className="font-bold text-green-600 text-sm">৳{change.toFixed(2)}</span>
                 </div>
-              </>
+              </div>
             )}
 
-            {(paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") && (
-              <div>
-                <Label className="capitalize">{paymentMethod} Transaction ID</Label>
+            {/* Mobile / Card TrxId */}
+            {["bkash", "nagad", "rocket", "card"].includes(paymentMethod) && (
+              <div className="space-y-1.5 p-3 rounded-lg border bg-muted/20">
+                <Label className="text-xs font-semibold">Transaction ID / TrxID (বাধ্যতামূলক):</Label>
                 <Input
-                  placeholder="e.g. 8N7A1B2C3D"
+                  placeholder="যেমন: TRXB12345678"
                   value={trxId}
                   onChange={(e) => setTrxId(e.target.value)}
-                  autoFocus
+                  className="h-8 text-xs bg-background font-mono uppercase"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Customer paid ৳{total.toFixed(2)} via {paymentMethod}
-                </p>
               </div>
             )}
 
-            {paymentMethod === "card" && (
-              <div className="rounded-md bg-muted p-3 text-center">
-                <p className="text-sm">Swipe / tap card on terminal</p>
-                <p className="text-2xl font-bold text-primary mt-1">৳{total.toFixed(2)}</p>
-              </div>
-            )}
-
+            {/* Due details */}
             {paymentMethod === "due" && (
-              <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3">
-                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Due / Credit Sale</p>
-                <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
-                  ৳{total.toFixed(2)} will be recorded as outstanding for {customerName || "this customer"}.
-                  Order status: <strong>Pending</strong>.
+              <div className="p-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 space-y-1">
+                <p className="font-semibold text-yellow-800 dark:text-yellow-400">বাকি বিক্রয় মোড সক্রিয়</p>
+                <p className="text-[11px] text-muted-foreground">
+                  কাস্টমারের নাম: <strong>{customerName || "Walk-in"}</strong> | ফোন: <strong>{customerPhone || "দেওয়া হয়নি"}</strong>
                 </p>
                 {!customerPhone && (
-                  <p className="text-xs text-destructive mt-2">⚠ Add customer phone for due tracking.</p>
+                  <p className="text-[11px] text-destructive font-semibold mt-1">⚠ বাকি ট্র্যাক করতে কাস্টমারের ফোন নম্বর দিন।</p>
                 )}
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentDialog(false)} disabled={submitting}>
-              <X className="h-4 w-4 mr-1" /> Cancel
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPaymentDialog(false)} disabled={submitting}>
+              <X className="h-4 w-4 mr-1" /> বাতিল
             </Button>
-            <Button onClick={completeSale} disabled={submitting}>
-              <Printer className="h-4 w-4 mr-1" /> Complete & Print
+            <Button size="sm" onClick={completeSale} disabled={submitting} className="bg-primary text-primary-foreground font-bold">
+              <Printer className="h-4 w-4 mr-1" /> {submitting ? "সংরক্ষণ হচ্ছে..." : "সম্পন্ন ও প্রিন্ট"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -599,38 +731,136 @@ export default function PosRegister({ vendorId, scope }: Props) {
       <Dialog open={holdDialog} onOpenChange={setHoldDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Held Sales</DialogTitle>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              হোল্ড করা বিক্রয় তালিকা (Held Sales)
+            </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
-            {heldLoading && <p className="text-center text-sm py-6">Loading…</p>}
+            {heldLoading && <p className="text-center text-sm py-6">লোড হচ্ছে…</p>}
             {!heldLoading && heldList.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-6">No held sales</p>
+              <p className="text-center text-sm text-muted-foreground py-6">কোনো হোল্ড করা বিক্রয় নেই</p>
             )}
             <div className="space-y-2">
               {heldList.map((h) => (
-                <div key={h.id} className="flex items-center justify-between border rounded-md p-3 hover:border-primary">
+                <div key={h.id} className="flex items-center justify-between border rounded-lg p-3 hover:border-primary transition-colors bg-card">
                   <div>
-                    <p className="font-mono text-xs">{h.hold_reference}</p>
-                    <p className="text-sm font-medium">{h.customer_name || "Walk-in"} • {h.customer_phone || "—"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(h.items as any[])?.length || 0} items • ৳{Number(h.total).toFixed(2)} • {new Date(h.created_at).toLocaleString()}
+                    <p className="font-mono text-xs font-bold text-primary">{h.hold_reference}</p>
+                    <p className="text-xs font-medium">{h.customer_name || "Walk-in"} • {h.customer_phone || "—"}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {(h.items as any[])?.length || 0} টি ওষুধ • ৳{Number(h.total).toFixed(2)} • {new Date(h.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" onClick={() => resumeHeld(h)}>Resume</Button>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 text-xs" onClick={() => resumeHeld(h)}>রিজিউম</Button>
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="h-7 w-7 text-destructive p-0"
                       onClick={async () => {
                         await supabase.from("pos_held_sales").delete().eq("id", h.id);
                         setHeldList((l) => l.filter((x) => x.id !== h.id));
                       }}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recent POS Sales Dialog */}
+      <Dialog open={recentOpen} onOpenChange={setRecentOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader className="flex flex-row items-center justify-between pr-6">
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              আজকের কাউন্টার বিক্রয় হিস্ট্রি (Recent POS Sales)
+            </DialogTitle>
+            <Button variant="ghost" size="sm" onClick={loadRecentSales} disabled={recentLoading} className="h-7 text-xs gap-1">
+              <RefreshCw className={`h-3.5 w-3.5 ${recentLoading ? "animate-spin" : ""}`} /> রিফ্রেশ
+            </Button>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[65vh]">
+            {recentLoading && <p className="text-center text-sm py-8 text-muted-foreground">লোড হচ্ছে…</p>}
+            {!recentLoading && recentSales.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-8">এখনও কোনো কাউন্টার বিক্রয় সংরক্ষিত নেই</p>
+            )}
+
+            <div className="space-y-2.5 p-1">
+              {recentSales.map((sale) => {
+                const isDue = sale.payment_method === "due" || sale.status === "pending";
+                const orderItems = sale.order_items || [];
+                const itemCount = orderItems.reduce((s: number, it: any) => s + (Number(it.quantity) || 1), 0);
+                
+                return (
+                  <div key={sale.id} className="p-3 rounded-lg border bg-card hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          #POS-{String(sale.order_number || sale.id.slice(0, 6)).padStart(6, "0")}
+                        </span>
+                        <Badge variant={isDue ? "destructive" : "default"} className="text-[10px] h-4 px-1.5 font-medium uppercase">
+                          {sale.payment_method || "CASH"}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">
+                        {sale.customer_name || "Walk-in Customer"} 
+                        {sale.customer_phone && <span className="text-muted-foreground font-normal ml-1">({sale.customer_phone})</span>}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground line-clamp-1">
+                        আইটেম: {orderItems.map((it: any) => `${it.product_name} (${it.quantity})`).join(", ") || `${itemCount} টি ওষুধ`}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0">
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">মোট টাকা</p>
+                        <p className="text-sm font-black text-primary">৳{Number(sale.total).toFixed(2)}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs gap-1.5 border-primary/40 hover:bg-primary/5 text-primary"
+                        onClick={() => {
+                          const cartFormat: CartItem[] = (sale.order_items || []).map((it: any) => ({
+                            product_id: it.product_id,
+                            product_name: it.product_name,
+                            price: it.price,
+                            quantity: it.quantity,
+                            image_url: null,
+                            stock: null,
+                          }));
+                          printReceipt(
+                            sale,
+                            cartFormat,
+                            {
+                              subtotal: Number(sale.total) + Number(sale.coupon_discount || 0),
+                              discount: sale.coupon_discount || 0,
+                              total: sale.total,
+                              paymentMethod: sale.payment_method || "cash",
+                              amountReceived: sale.amount_received || sale.total,
+                              change: sale.change_returned || 0,
+                            },
+                            receiptWidth
+                          );
+                        }}
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                        রিসিপ্ট প্রিন্ট
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
         </DialogContent>
@@ -656,7 +886,9 @@ function printReceipt(order: any, items: CartItem[], totals: any, width: "80mm" 
   const titleFs = isNarrow ? "12px" : "14px";
   const itemFs = isNarrow ? "9px" : "11px";
   const totalFs = isNarrow ? "11px" : "13px";
-  const html = `<!doctype html><html><head><title>Receipt #${order.order_number}</title>
+  const orderNum = order.order_number ? String(order.order_number).padStart(6, "0") : String(order.id || "").slice(0, 8);
+  
+  const html = `<!doctype html><html><head><title>Receipt #${orderNum}</title>
 <style>
 @page { size: ${width} auto; margin: 0; }
 body { width: ${bodyW}; font-family: 'Courier New', monospace; font-size: ${baseFs}; color:#000; padding: ${isNarrow ? "2mm" : "4mm"}; margin:0; }
@@ -668,29 +900,38 @@ table { width:100%; font-size:${itemFs}; }
 td { padding: 2px 0; vertical-align: top; }
 .small { font-size: ${isNarrow ? "8px" : "10px"}; }
 </style></head><body>
-<div class="center bold" style="font-size:${titleFs}">RECEIPT</div>
-<div class="center small">Order #${order.order_number}</div>
+<div class="center bold" style="font-size:${titleFs}">SHEIKH PHARMA</div>
+<div class="center small">POS Counter Sales Receipt</div>
+<div class="center small">Invoice #${orderNum}</div>
 <div class="center small">${new Date(order.created_at || Date.now()).toLocaleString()}</div>
 <hr>
-<div class="small">Customer: ${order.customer_name || "Walk-in"}</div>
+<div class="small">Customer: ${order.customer_name || "Walk-in Customer"}</div>
 ${order.customer_phone ? `<div class="small">Phone: ${order.customer_phone}</div>` : ""}
 <hr>
 <table>
 ${items.map(it => `<tr><td>${it.product_name}<br><span class="small">${it.quantity} × ৳${it.price}</span></td><td style="text-align:right">৳${(it.price*it.quantity).toFixed(2)}</td></tr>`).join("")}
 </table>
 <hr>
-<div class="row"><span>Subtotal</span><span>৳${totals.subtotal.toFixed(2)}</span></div>
+<div class="row"><span>Subtotal</span><span>৳${Number(totals.subtotal).toFixed(2)}</span></div>
 ${totals.discount ? `<div class="row"><span>Discount</span><span>-৳${Number(totals.discount).toFixed(2)}</span></div>` : ""}
-<div class="row bold" style="font-size:${totalFs}"><span>TOTAL</span><span>৳${totals.total.toFixed(2)}</span></div>
+<div class="row bold" style="font-size:${totalFs}"><span>TOTAL</span><span>৳${Number(totals.total).toFixed(2)}</span></div>
 <hr>
 <div class="row small"><span>Payment</span><span style="text-transform:uppercase">${totals.paymentMethod}</span></div>
 ${totals.paymentMethod === "cash" ? `
 <div class="row small"><span>Received</span><span>৳${Number(totals.amountReceived).toFixed(2)}</span></div>
-<div class="row small"><span>Change</span><span>৳${totals.change.toFixed(2)}</span></div>` : ""}
+<div class="row small"><span>Change</span><span>৳${Number(totals.change).toFixed(2)}</span></div>` : ""}
 <hr>
-<div class="center small">Thank you!</div>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);};</script>
+<div class="center small" style="margin-top:6px">Thank you for shopping with us!</div>
+<div class="center small">Hotline: 01720191100</div>
+<script>
+window.onload = function() {
+  window.print();
+  setTimeout(() => window.close(), 1000);
+};
+</script>
 </body></html>`;
+
+  w.document.open();
   w.document.write(html);
   w.document.close();
 }
