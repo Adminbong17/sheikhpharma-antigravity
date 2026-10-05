@@ -234,7 +234,6 @@ export default function PosRegister({ vendorId, scope }: Props) {
       const orderInsert: any = {
         user_id: user?.id || null,
         status: isDue ? "pending" : "delivered",
-        payment_status: isDue ? "unpaid" : "paid",
         total,
         payment_method: paymentMethod,
         transaction_id: ["bkash", "nagad", "rocket"].includes(paymentMethod) ? (trxId.trim() || null) : null,

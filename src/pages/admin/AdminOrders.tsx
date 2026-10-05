@@ -692,11 +692,8 @@ const AdminOrders = () => {
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-1.5">
                   <Badge className={`${statusColors[o.status]} border-none text-[10px] px-1.5 py-0`}>{o.status}</Badge>
-                  <Badge
-                    className={`border-none text-[10px] px-1.5 py-0 cursor-pointer ${o.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                    onClick={(e) => { e.stopPropagation(); togglePaymentStatus(o.id, o.payment_status || 'unpaid', o); }}
-                  >
-                    {o.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize bg-slate-50 font-medium">
+                    {o.payment_method || 'COD'}
                   </Badge>
                   {cached && minRatio !== null && (
                     <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-bold ${minRatio >= 80 ? 'bg-green-100 text-green-700' : minRatio >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
@@ -769,9 +766,8 @@ const AdminOrders = () => {
                     <Badge className={`${statusColors[o.status]} border-none`}>{o.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`border-none cursor-pointer ${o.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                      onClick={() => togglePaymentStatus(o.id, o.payment_status || 'unpaid', o)}>
-                      {o.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                    <Badge variant="outline" className="capitalize text-xs font-medium bg-slate-50">
+                      {o.payment_method || 'COD'}
                     </Badge>
                   </TableCell>
                   <TableCell>
