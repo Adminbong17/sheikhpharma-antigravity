@@ -43,8 +43,8 @@ const TopVendors = () => {
             {b("সব দেখুন", "See All")} <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="relative">
-          <div className="flex animate-scroll-fast gap-4 w-max">
+        <div className="relative group overflow-hidden">
+          <div className="flex animate-scroll-fast gap-4 w-max group-hover:[animation-play-state:paused]">
             {items.map((v, i) => (
               <Link
                 key={`${v.id}-${i}`}

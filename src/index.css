@@ -231,7 +231,8 @@ html, body, #root {
 }
 
 .animate-scroll {
-  animation: scroll 25s linear infinite;
+  animation: scroll 60s linear infinite;
+  will-change: transform;
 }
 
 .animate-scroll:hover {
@@ -239,10 +240,20 @@ html, body, #root {
 }
 
 .animate-scroll-fast {
-  animation: scroll 12s linear infinite;
+  animation: scroll 45s linear infinite;
+  will-change: transform;
 }
 
 .animate-scroll-fast:hover {
+  animation-play-state: paused;
+}
+
+.animate-scroll-slow {
+  animation: scroll 80s linear infinite;
+  will-change: transform;
+}
+
+.animate-scroll-slow:hover {
   animation-play-state: paused;
 }
 

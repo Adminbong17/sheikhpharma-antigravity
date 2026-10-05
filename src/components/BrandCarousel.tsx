@@ -42,8 +42,8 @@ const BrandCarousel = () => {
             </Button>
           </Link>
         </div>
-        <div className="relative">
-          <div className="flex animate-scroll gap-4 w-max">
+        <div className="relative group overflow-hidden">
+          <div className="flex animate-scroll gap-4 w-max group-hover:[animation-play-state:paused]">
             {items.map((b_item: any, i) => (
               <Link
                 key={`${b_item.id}-${i}`}
