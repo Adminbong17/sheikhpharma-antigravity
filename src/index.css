@@ -231,7 +231,7 @@ html, body, #root {
 }
 
 .animate-scroll {
-  animation: scroll 60s linear infinite;
+  animation: scroll 120s linear infinite;
   will-change: transform;
 }
 
@@ -240,7 +240,7 @@ html, body, #root {
 }
 
 .animate-scroll-fast {
-  animation: scroll 45s linear infinite;
+  animation: scroll 100s linear infinite;
   will-change: transform;
 }
 
@@ -249,7 +249,7 @@ html, body, #root {
 }
 
 .animate-scroll-slow {
-  animation: scroll 80s linear infinite;
+  animation: scroll 150s linear infinite;
   will-change: transform;
 }
 
