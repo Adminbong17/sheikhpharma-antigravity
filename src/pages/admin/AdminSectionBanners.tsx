@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, Image, ExternalLink, Sparkles, Layers, Info, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Image, ExternalLink, Sparkles, Layers, Info, CheckCircle2, Loader2, Upload } from "lucide-react";
 import BackButton from "@/components/BackButton";
+import { uploadToVault } from "@/lib/vaultStorage";
 
 const RECOMMENDED_WIDTH = 1000;
 const RECOMMENDED_HEIGHT = 200;
@@ -22,6 +23,9 @@ const AdminSectionBanners = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingBanner, setEditingBanner] = useState<any>(null);
   const [form, setForm] = useState({ image_url: "", link_url: "", after_section_id: "" });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
 
   const { data: sections = [] } = useQuery({
     queryKey: ["admin-homepage-sections"],
@@ -48,11 +52,11 @@ const AdminSectionBanners = () => {
   });
 
   const addBanner = useMutation({
-    mutationFn: async (f: typeof form) => {
+    mutationFn: async (payload: { image_url: string; link_url?: string | null; after_section_id: string }) => {
       const { error } = await (supabase as any).from("section_banners").insert({
-        image_url: f.image_url,
-        link_url: f.link_url || null,
-        after_section_id: f.after_section_id,
+        image_url: payload.image_url,
+        link_url: payload.link_url || null,
+        after_section_id: payload.after_section_id,
       });
       if (error) throw error;
     },
@@ -112,57 +116,202 @@ const AdminSectionBanners = () => {
     },
   });
 
-  const resetForm = () => setForm({ image_url: "", link_url: "", after_section_id: "" });
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `section-banners/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("site-assets").upload(path, file);
-    if (error) {
-      toast.error("আপলোড ব্যর্থ: " + error.message);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
-    setForm((prev) => ({ ...prev, image_url: urlData.publicUrl }));
-    toast.success("ইমেজ আপলোড সম্পন্ন হয়েছে");
+  const resetForm = () => {
+    setForm({ image_url: "", link_url: "", after_section_id: sections[0]?.id || "" });
+    setImageFile(null);
+    setPreviewUrl("");
+    setUploading(false);
   };
 
-  const formFields = (
-    <div className="space-y-4">
+  const openAddDialog = () => {
+    resetForm();
+    setShowAddDialog(true);
+  };
+
+  const openEditDialog = (b: any) => {
+    setEditingBanner(b);
+    setImageFile(null);
+    setPreviewUrl(b.image_url || "");
+    setForm({
+      image_url: b.image_url || "",
+      link_url: b.link_url || "",
+      after_section_id: b.after_section_id,
+    });
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    // Instant local preview
+    const localUrl = URL.createObjectURL(file);
+    setPreviewUrl(localUrl);
+
+    // Fast upload to FileVault
+    setUploading(true);
+    const toastId = toast.loading("ব্যানার ইমেজ আপলোড হচ্ছে...");
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const customName = `section-banner-${Date.now()}.${ext}`;
+      const vaultUrl = await uploadToVault(file, customName);
+      setForm((prev) => ({ ...prev, image_url: vaultUrl }));
+      toast.success("ইমেজ আপলোড সম্পন্ন হয়েছে!", { id: toastId });
+    } catch (err: any) {
+      console.warn("Vault upload error, trying fallback:", err);
+      try {
+        const path = `section-banners/${Date.now()}.${file.name.split(".").pop() || "png"}`;
+        const { error: sErr } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+        if (sErr) throw sErr;
+        const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+        setForm((prev) => ({ ...prev, image_url: urlData.publicUrl }));
+        toast.success("ইমেজ আপলোড সম্পন্ন হয়েছে!", { id: toastId });
+      } catch (fallbackErr: any) {
+        toast.error("আপলোড ব্যর্থ: " + (fallbackErr.message || err.message), { id: toastId });
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveAdd = async () => {
+    if (uploading) {
+      toast.info("ছবি আপলোড হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...");
+      return;
+    }
+
+    let finalImageUrl = form.image_url;
+
+    // If file was selected but upload hasn't set url yet
+    if (!finalImageUrl && imageFile) {
+      setUploading(true);
+      const toastId = toast.loading("ব্যানার আপলোড করা হচ্ছে...");
+      try {
+        const ext = imageFile.name.split(".").pop() || "png";
+        const customName = `section-banner-${Date.now()}.${ext}`;
+        finalImageUrl = await uploadToVault(imageFile, customName);
+        setForm((prev) => ({ ...prev, image_url: finalImageUrl }));
+        toast.success("ইমেজ আপলোড সম্পন্ন হয়েছে!", { id: toastId });
+      } catch (err: any) {
+        toast.error("ইমেজ আপলোড ব্যর্থ হয়েছে: " + err.message, { id: toastId });
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
+
+    if (!finalImageUrl) {
+      toast.error("দয়া করে ব্যানারের ছবি সিলেক্ট করুন বা সরাসরি ইমেজের লিঙ্ক পেস্ট করুন");
+      return;
+    }
+
+    const targetSection = form.after_section_id || sections[0]?.id;
+    if (!targetSection) {
+      toast.error("দয়া করে কোন সেকশনের পরে ব্যানারটি দেখাবে তা নির্বাচন করুন");
+      return;
+    }
+
+    addBanner.mutate({
+      image_url: finalImageUrl,
+      link_url: form.link_url || null,
+      after_section_id: targetSection,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingBanner) return;
+    if (uploading) {
+      toast.info("ছবি আপলোড হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...");
+      return;
+    }
+
+    let finalImageUrl = form.image_url;
+
+    if (!finalImageUrl && imageFile) {
+      setUploading(true);
+      const toastId = toast.loading("ব্যানার আপলোড করা হচ্ছে...");
+      try {
+        const ext = imageFile.name.split(".").pop() || "png";
+        const customName = `section-banner-${Date.now()}.${ext}`;
+        finalImageUrl = await uploadToVault(imageFile, customName);
+        toast.success("ইমেজ আপলোড সম্পন্ন হয়েছে!", { id: toastId });
+      } catch (err: any) {
+        toast.error("ইমেজ আপলোড ব্যর্থ হয়েছে: " + err.message, { id: toastId });
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
+
+    if (!finalImageUrl) {
+      toast.error("দয়া করে ব্যানারের ছবি সিলেক্ট করুন বা লিঙ্ক দিন");
+      return;
+    }
+
+    const targetSection = form.after_section_id || sections[0]?.id;
+
+    updateBanner.mutate({
+      id: editingBanner.id,
+      image_url: finalImageUrl,
+      link_url: form.link_url || null,
+      after_section_id: targetSection,
+    });
+  };
+
+  const currentPreview = previewUrl || form.image_url;
+
+  const renderFormFields = () => (
+    <div className="space-y-4 py-2">
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <Label className="font-semibold text-foreground">
-            ব্যানার ইমেজ
+          <Label className="font-semibold text-foreground flex items-center gap-1.5">
+            <Upload className="h-4 w-4 text-violet-600" /> ব্যানার ইমেজ নির্বাচন করুন *
           </Label>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs font-mono">
             {ASPECT_RATIO_LABEL}
           </Badge>
         </div>
-        <Input type="file" accept="image/*" onChange={handleImageUpload} />
-        {form.image_url && (
-          <div className="mt-2.5 relative group rounded-xl overflow-hidden border-2 border-primary/40 shadow-sm bg-muted/30">
+
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={handleImageFileChange}
+          disabled={uploading}
+          className="cursor-pointer file:cursor-pointer file:font-medium file:text-primary hover:border-primary/60 transition-colors"
+        />
+
+        {currentPreview && (
+          <div className="mt-3 relative group rounded-xl overflow-hidden border-2 border-violet-500/40 shadow-sm bg-muted/30">
             <img
-              src={form.image_url}
+              src={currentPreview}
               alt="Preview"
               className="w-full aspect-[1000/200] object-cover"
             />
-            <div className="absolute top-2 right-2">
-              <Badge className="bg-black/70 text-white border-0 backdrop-blur-sm text-[11px]">
-                1000 × 200 (5:1)
-              </Badge>
+            <div className="absolute top-2 right-2 flex items-center gap-1.5">
+              {uploading ? (
+                <Badge className="bg-amber-500 text-white border-0 text-[11px] animate-pulse">
+                  <Loader2 className="h-3 w-3 animate-spin mr-1 inline" /> আপলোড হচ্ছে...
+                </Badge>
+              ) : (
+                <Badge className="bg-emerald-600 text-white border-0 text-[11px] shadow-sm">
+                  <CheckCircle2 className="h-3 w-3 mr-1 inline" /> রেডি (1000 × 200)
+                </Badge>
+              )}
             </div>
           </div>
         )}
+
         <Input
-          className="mt-2"
+          className="mt-2.5 text-xs font-mono"
           value={form.image_url}
-          onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))}
+          onChange={(e) => {
+            setForm((p) => ({ ...p, image_url: e.target.value }));
+            setPreviewUrl(e.target.value);
+          }}
           placeholder="বা ইমেজের সরাসরি লিঙ্ক (URL) পেস্ট করুন..."
         />
-        <p className="text-[11px] text-muted-foreground mt-1.5">
-          💡 সেরা রেজাল্টের জন্য 1000 × 200 পিক্সেল অথবা 5:1 রেশিও-র ছবি ব্যবহার করুন।
+        <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
+          💡 সেরা রেজাল্টের জন্য 1000 × 200 পিক্সেল অথবা 5:1 ওয়াইড ব্যানারের ছবি ব্যবহার করুন।
         </p>
       </div>
 
@@ -182,8 +331,11 @@ const AdminSectionBanners = () => {
       <div>
         <Label className="font-semibold text-foreground">কোন সেকশনের পরে দেখাবে? *</Label>
         <div className="mt-1.5">
-          <Select value={form.after_section_id} onValueChange={(v) => setForm((p) => ({ ...p, after_section_id: v }))}>
-            <SelectTrigger>
+          <Select
+            value={form.after_section_id || sections[0]?.id || ""}
+            onValueChange={(v) => setForm((p) => ({ ...p, after_section_id: v }))}
+          >
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="হোমপেজ সেকশন নির্বাচন করুন" />
             </SelectTrigger>
             <SelectContent>
@@ -223,29 +375,12 @@ const AdminSectionBanners = () => {
           <Badge className="bg-violet-600/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 px-3 py-1 font-mono text-xs">
             সাইজ: 1000 × 200 px (5:1)
           </Badge>
-          <Dialog open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/25">
-                <Plus className="mr-1.5 h-4 w-4" /> নতুন ব্যানার যোগ করুন
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="h-5 w-5 text-violet-600" />
-                  নতুন সেকশন ব্যানার যোগ করুন
-                </DialogTitle>
-              </DialogHeader>
-              {formFields}
-              <Button
-                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white mt-2"
-                onClick={() => addBanner.mutate(form)}
-                disabled={!form.image_url || !form.after_section_id || addBanner.isPending}
-              >
-                {addBanner.isPending ? "যোগ হচ্ছে..." : "ব্যানার যোগ করুন"}
-              </Button>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={openAddDialog}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/25"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> নতুন ব্যানার যোগ করুন
+          </Button>
         </div>
       </div>
 
@@ -266,7 +401,9 @@ const AdminSectionBanners = () => {
 
       {/* Content / Banner List */}
       {isLoading ? (
-        <div className="p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>
+        <div className="p-12 text-center text-muted-foreground flex items-center justify-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin text-violet-600" /> লোড হচ্ছে...
+        </div>
       ) : banners.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2">
           <div className="max-w-md mx-auto space-y-3">
@@ -278,9 +415,9 @@ const AdminSectionBanners = () => {
               হোমপেজের বিভিন্ন সেকশনের মাঝে বিজ্ঞাপন বা ব্র‍্যান্ড প্রমোশন প্রদর্শনের জন্য উপরোক্ত "নতুন ব্যানার যোগ করুন" বাটনে ক্লিক করে 1000×200 সাইজের ব্যানার আপলোড করুন।
             </p>
             <Button
-              onClick={() => setShowAddDialog(true)}
+              onClick={openAddDialog}
               variant="outline"
-              className="mt-2 border-violet-300 dark:border-violet-700 text-violet-600"
+              className="mt-2 border-violet-300 dark:border-violet-700 text-violet-600 hover:bg-violet-50"
             >
               <Plus className="mr-1.5 h-4 w-4" /> প্রথম ব্যানার যোগ করুন
             </Button>
@@ -318,14 +455,7 @@ const AdminSectionBanners = () => {
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs px-2.5"
-                        onClick={() => {
-                          setEditingBanner(b);
-                          setForm({
-                            image_url: b.image_url,
-                            link_url: b.link_url || "",
-                            after_section_id: b.after_section_id,
-                          });
-                        }}
+                        onClick={() => openEditDialog(b)}
                       >
                         এডিট
                       </Button>
@@ -383,6 +513,40 @@ const AdminSectionBanners = () => {
         </div>
       )}
 
+      {/* Add Banner Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) resetForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Sparkles className="h-5 w-5 text-violet-600" />
+              নতুন সেকশন ব্যানার যোগ করুন
+            </DialogTitle>
+          </DialogHeader>
+
+          {renderFormFields()}
+
+          <Button
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white mt-2 shadow-md shadow-violet-500/25"
+            onClick={handleSaveAdd}
+            disabled={addBanner.isPending || uploading}
+          >
+            {addBanner.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ব্যানার যোগ হচ্ছে...
+              </>
+            ) : uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ছবি আপলোড হচ্ছে...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" /> ব্যানার যোগ করুন
+              </>
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Banner Dialog */}
       <Dialog open={!!editingBanner} onOpenChange={(o) => { if (!o) { setEditingBanner(null); resetForm(); } }}>
         <DialogContent className="max-w-lg">
@@ -392,18 +556,25 @@ const AdminSectionBanners = () => {
               ব্যানার সম্পাদনা (Edit Banner)
             </DialogTitle>
           </DialogHeader>
-          {formFields}
+
+          {renderFormFields()}
+
           <Button
             className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white mt-2"
-            onClick={() => updateBanner.mutate({
-              id: editingBanner.id,
-              image_url: form.image_url,
-              link_url: form.link_url || null,
-              after_section_id: form.after_section_id,
-            })}
-            disabled={updateBanner.isPending}
+            onClick={handleSaveEdit}
+            disabled={updateBanner.isPending || uploading}
           >
-            {updateBanner.isPending ? "সংরক্ষণ হচ্ছে..." : "পরিবর্তন সংরক্ষণ করুন"}
+            {updateBanner.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> সংরক্ষণ হচ্ছে...
+              </>
+            ) : uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ছবি আপলোড হচ্ছে...
+              </>
+            ) : (
+              "পরিবর্তন সংরক্ষণ করুন"
+            )}
           </Button>
         </DialogContent>
       </Dialog>
