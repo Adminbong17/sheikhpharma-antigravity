@@ -577,7 +577,7 @@ const AdminOrders = () => {
   });
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       <div className="mb-4 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">

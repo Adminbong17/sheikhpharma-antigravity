@@ -252,7 +252,7 @@ const AdminCategories = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6 space-y-8">
+    <div className="p-3 sm:p-6 space-y-8 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       {/* Categories Section */}
       <div>

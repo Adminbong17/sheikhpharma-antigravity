@@ -74,7 +74,7 @@ const AdminLabTestBookings = () => {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center gap-2">
         <FlaskConical className="h-6 w-6 text-primary" />

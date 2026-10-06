@@ -139,7 +139,7 @@ const AdminBrands = () => {
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
   return (
-    <div className="p-3 sm:p-6 space-y-6 sm:space-y-8">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl sm:text-2xl font-bold">Brand Management</h1>
@@ -213,51 +213,53 @@ const AdminBrands = () => {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Logo</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {brands.filter((b: any) => !searchQuery || b.name.toLowerCase().includes(searchQuery.toLowerCase())).map((b: any) => (
-            <TableRow key={b.id}>
-              <TableCell>
-                {b.logo_url ? <img src={b.logo_url} alt={b.name} className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted" />}
-              </TableCell>
-              <TableCell className="font-medium">{b.name}</TableCell>
-              <TableCell>
-                <Select defaultValue={b.status} onValueChange={(v) => updateMutation.mutate({ id: b.id, updates: { status: v } })}>
-                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell>
-                <Switch checked={b.is_active} onCheckedChange={(v) => updateMutation.mutate({ id: b.id, updates: { is_active: v } })} />
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditBrand(b); setName(b.name); setLogoFile(null); }}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(b.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="hidden sm:block rounded-xl border bg-card overflow-hidden shadow-xs">
+        <div className="overflow-x-auto w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Logo</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {brands.filter((b: any) => !searchQuery || b.name.toLowerCase().includes(searchQuery.toLowerCase())).map((b: any) => (
+                <TableRow key={b.id}>
+                  <TableCell>
+                    {b.logo_url ? <img src={b.logo_url} alt={b.name} className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted" />}
+                  </TableCell>
+                  <TableCell className="font-medium">{b.name}</TableCell>
+                  <TableCell>
+                    <Select defaultValue={b.status} onValueChange={(v) => updateMutation.mutate({ id: b.id, updates: { status: v } })}>
+                      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Switch checked={b.is_active} onCheckedChange={(v) => updateMutation.mutate({ id: b.id, updates: { is_active: v } })} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => { setEditBrand(b); setName(b.name); setLogoFile(null); }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(b.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Edit Dialog */}
@@ -282,33 +284,37 @@ const AdminBrands = () => {
 
       {/* Pending Brand Requests */}
       {pendingRequests.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Pending Brand Requests</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Logo</TableHead>
-                <TableHead>Brand Name</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pendingRequests.map((r: any) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    {r.logo_url ? <img src={r.logo_url} alt={r.brand_name} className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted" />}
-                  </TableCell>
-                  <TableCell className="font-medium">{r.brand_name}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => approveRequest.mutate(r)}>Approve</Button>
-                      <Button size="sm" variant="destructive" onClick={() => rejectRequest.mutate(r.id)}>Reject</Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Pending Brand Requests</h2>
+          <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Logo</TableHead>
+                    <TableHead>Brand Name</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingRequests.map((r: any) => (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        {r.logo_url ? <img src={r.logo_url} alt={r.brand_name} className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted" />}
+                      </TableCell>
+                      <TableCell className="font-medium">{r.brand_name}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveRequest.mutate(r)}>Approve</Button>
+                          <Button size="sm" variant="destructive" onClick={() => rejectRequest.mutate(r.id)}>Reject</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </div>
       )}
     </div>

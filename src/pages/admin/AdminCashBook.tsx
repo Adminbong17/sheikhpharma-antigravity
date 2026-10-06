@@ -121,7 +121,7 @@ const AdminCashBook = () => {
   });
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between">
         <div>
@@ -228,50 +228,52 @@ const AdminCashBook = () => {
           </div>
 
           {/* Desktop table */}
-          <Card className="hidden sm:block">
-            <CardContent className="pt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Trans ID</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell>{formatDate(t.transaction_date)}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.type === "cash_in" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                          {t.type === "cash_in" ? <ArrowDownCircle className="h-3 w-3" /> : <ArrowUpCircle className="h-3 w-3" />}
-                          {t.type === "cash_in" ? "Cash In" : "Cash Out"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{t.transaction_id}</TableCell>
-                      <TableCell>{t.description || "-"}</TableCell>
-                      <TableCell>{t.category || "-"}</TableCell>
-                      <TableCell className={`text-right font-semibold ${t.type === "cash_in" ? "text-green-600" : "text-destructive"}`}>
-                        {t.type === "cash_in" ? "+" : "-"}৳{Number(t.amount).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this transaction?")) deleteTransaction.mutate(t.id); }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
+          <Card className="hidden sm:block overflow-hidden shadow-xs">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-4">Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Trans ID</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="w-[50px] pr-4" />
                     </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={5}>Net Balance</TableCell>
-                    <TableCell className={`text-right ${netBalance >= 0 ? "text-green-600" : "text-destructive"}`}>৳{netBalance.toLocaleString()}</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((t) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="pl-4">{formatDate(t.transaction_date)}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.type === "cash_in" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {t.type === "cash_in" ? <ArrowDownCircle className="h-3 w-3" /> : <ArrowUpCircle className="h-3 w-3" />}
+                            {t.type === "cash_in" ? "Cash In" : "Cash Out"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{t.transaction_id}</TableCell>
+                        <TableCell>{t.description || "-"}</TableCell>
+                        <TableCell>{t.category || "-"}</TableCell>
+                        <TableCell className={`text-right font-semibold ${t.type === "cash_in" ? "text-green-600" : "text-destructive"}`}>
+                          {t.type === "cash_in" ? "+" : "-"}৳{Number(t.amount).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="pr-4">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this transaction?")) deleteTransaction.mutate(t.id); }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={5} className="pl-4">Net Balance</TableCell>
+                      <TableCell className={`text-right ${netBalance >= 0 ? "text-green-600" : "text-destructive"}`}>৳{netBalance.toLocaleString()}</TableCell>
+                      <TableCell className="pr-4" />
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </>

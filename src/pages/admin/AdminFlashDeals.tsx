@@ -163,7 +163,7 @@ const AdminFlashDeals = () => {
   const existingProductIds = dealProducts.map((dp: any) => dp.product_id || dp.products?.id);
 
   return (
-    <div className="space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between">
         <div>
@@ -303,45 +303,47 @@ const AdminFlashDeals = () => {
 
             {/* Current products */}
             {dealProducts.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ছবি</TableHead>
-                    <TableHead>নাম</TableHead>
-                    <TableHead>আসল মূল্য</TableHead>
-                    <TableHead>ডিল মূল্য</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dealProducts.map((dp: any) => (
-                    <TableRow key={dp.id}>
-                      <TableCell>
-                        <img src={dp.products?.image_url || "/placeholder.svg"} alt="" className="h-10 w-10 rounded object-cover" />
-                      </TableCell>
-                      <TableCell className="font-medium">{dp.products?.name}</TableCell>
-                      <TableCell className="text-muted-foreground">৳{dp.products?.price}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24"
-                          placeholder="ডিল মূল্য"
-                          defaultValue={dp.deal_price ?? ""}
-                          onBlur={(e) => {
-                            const val = e.target.value ? parseFloat(e.target.value) : null;
-                            updateDealPrice.mutate({ id: dp.id, deal_price: val });
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => removeProduct.mutate(dp.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
+              <div className="rounded-lg border overflow-x-auto w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ছবি</TableHead>
+                      <TableHead>নাম</TableHead>
+                      <TableHead>আসল মূল্য</TableHead>
+                      <TableHead>ডিল মূল্য</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {dealProducts.map((dp: any) => (
+                      <TableRow key={dp.id}>
+                        <TableCell>
+                          <img src={dp.products?.image_url || "/placeholder.svg"} alt="" className="h-10 w-10 rounded object-cover" />
+                        </TableCell>
+                        <TableCell className="font-medium">{dp.products?.name}</TableCell>
+                        <TableCell className="text-muted-foreground">৳{dp.products?.price}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            className="w-24"
+                            placeholder="ডিল মূল্য"
+                            defaultValue={dp.deal_price ?? ""}
+                            onBlur={(e) => {
+                              const val = e.target.value ? parseFloat(e.target.value) : null;
+                              updateDealPrice.mutate({ id: dp.id, deal_price: val });
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => removeProduct.mutate(dp.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

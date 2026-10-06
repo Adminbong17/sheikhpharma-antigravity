@@ -91,7 +91,7 @@ const AdminCurrencies = () => {
   const filteredCurrencies = currencies.filter((c: any) => !searchQuery || c.code.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-3" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Currency Management</h1>
@@ -164,38 +164,40 @@ const AdminCurrencies = () => {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Symbol</TableHead>
-              <TableHead>Exchange Rate</TableHead>
-              <TableHead>Default</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCurrencies.map((c: any) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-mono font-bold">{c.code}</TableCell>
-                <TableCell>{c.name}</TableCell>
-                <TableCell>{c.symbol}</TableCell>
-                <TableCell>{c.exchange_rate}</TableCell>
-                <TableCell>{c.is_default ? "✅" : ""}</TableCell>
-                <TableCell>{c.is_active ? "✅" : "❌"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                    {!c.is_default && <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                  </div>
-                </TableCell>
+      <div className="hidden sm:block rounded-xl border bg-card overflow-hidden shadow-xs">
+        <div className="overflow-x-auto w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Symbol</TableHead>
+                <TableHead>Exchange Rate</TableHead>
+                <TableHead>Default</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredCurrencies.map((c: any) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-mono font-bold">{c.code}</TableCell>
+                  <TableCell>{c.name}</TableCell>
+                  <TableCell>{c.symbol}</TableCell>
+                  <TableCell>{c.exchange_rate}</TableCell>
+                  <TableCell>{c.is_default ? "✅" : ""}</TableCell>
+                  <TableCell>{c.is_active ? "✅" : "❌"}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                      {!c.is_default && <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

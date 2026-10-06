@@ -151,7 +151,7 @@ const AdminStaticPages = () => {
   if (isLoading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       <div className="mb-6 flex items-center gap-3">
         <Link to="/admin/site-settings">

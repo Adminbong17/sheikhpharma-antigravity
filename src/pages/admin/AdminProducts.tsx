@@ -782,7 +782,7 @@ const AdminProducts = () => {
   const brandMap = new Map(brands.map(b => [b.id, b.name]));
 
   return (
-    <div className="p-3 sm:p-6 space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       
       {/* Header & Primary Action Buttons */}

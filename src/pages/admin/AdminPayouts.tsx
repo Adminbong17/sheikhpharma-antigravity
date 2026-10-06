@@ -92,7 +92,7 @@ const AdminPayouts = () => {
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold">Vendor Payouts</h1>
@@ -131,7 +131,7 @@ const AdminPayouts = () => {
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden sm:block">
+      <Card className="hidden sm:block overflow-hidden shadow-xs">
         <CardContent className="p-0">
           {payouts.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
@@ -139,42 +139,44 @@ const AdminPayouts = () => {
               <p>No payout requests yet.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Trx ID</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payouts.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-sm">{new Date(p.requested_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-medium">{p.vendors?.store_name || "-"}</TableCell>
-                    <TableCell className="font-medium">{formatPrice(p.amount)}</TableCell>
-                    <TableCell className="text-sm">
-                      {p.vendor_payment_methods ? (
-                        <div>
-                          <span className="capitalize">{p.vendor_payment_methods.method_type}</span>
-                          <br /><span className="text-muted-foreground">{p.vendor_payment_methods.account_name} — {p.vendor_payment_methods.account_number}</span>
-                          {p.vendor_payment_methods.bank_name && <><br /><span className="text-muted-foreground">{p.vendor_payment_methods.bank_name} ({p.vendor_payment_methods.branch_name})</span></>}
-                        </div>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>{statusBadge(p.status)}</TableCell>
-                    <TableCell className="text-sm">{p.admin_trx_id || "-"}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Update</Button>
-                    </TableCell>
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Trx ID</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {payouts.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm">{new Date(p.requested_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">{p.vendors?.store_name || "-"}</TableCell>
+                      <TableCell className="font-medium">{formatPrice(p.amount)}</TableCell>
+                      <TableCell className="text-sm">
+                        {p.vendor_payment_methods ? (
+                          <div>
+                            <span className="capitalize">{p.vendor_payment_methods.method_type}</span>
+                            <br /><span className="text-muted-foreground">{p.vendor_payment_methods.account_name} — {p.vendor_payment_methods.account_number}</span>
+                            {p.vendor_payment_methods.bank_name && <><br /><span className="text-muted-foreground">{p.vendor_payment_methods.bank_name} ({p.vendor_payment_methods.branch_name})</span></>}
+                          </div>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell>{statusBadge(p.status)}</TableCell>
+                      <TableCell className="text-sm">{p.admin_trx_id || "-"}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Update</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -140,7 +140,7 @@ const AdminCustomerCredits = () => {
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <h1 className="text-xl sm:text-2xl font-bold">Customer Credits & Payouts</h1>
 
@@ -184,44 +184,46 @@ const AdminCustomerCredits = () => {
           </div>
 
           {/* Desktop table */}
-          <Card className="hidden sm:block">
+          <Card className="hidden sm:block overflow-hidden shadow-xs">
             <CardContent className="p-0">
               {payouts.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground"><Send className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>No payout requests yet.</p></div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Account</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Trx ID</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payouts.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-sm">{p.profile?.username || p.profile?.email || "-"}</TableCell>
-                        <TableCell className="font-medium">{formatPrice(p.amount)}</TableCell>
-                        <TableCell className="text-sm capitalize">{p.method}</TableCell>
-                        <TableCell className="text-sm">{p.account_number}</TableCell>
-                        <TableCell>{statusBadge(p.status)}</TableCell>
-                        <TableCell className="text-sm">{p.admin_trx_id || "-"}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Update</Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget({ type: "payout", id: p.id })}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Account</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Trx ID</TableHead>
+                        <TableHead>Action</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {payouts.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-sm">{p.profile?.username || p.profile?.email || "-"}</TableCell>
+                          <TableCell className="font-medium">{formatPrice(p.amount)}</TableCell>
+                          <TableCell className="text-sm capitalize">{p.method}</TableCell>
+                          <TableCell className="text-sm">{p.account_number}</TableCell>
+                          <TableCell>{statusBadge(p.status)}</TableCell>
+                          <TableCell className="text-sm">{p.admin_trx_id || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Update</Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget({ type: "payout", id: p.id })}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -256,40 +258,42 @@ const AdminCustomerCredits = () => {
           </div>
 
           {/* Desktop table */}
-          <Card className="hidden sm:block">
+          <Card className="hidden sm:block overflow-hidden shadow-xs">
             <CardContent className="p-0">
               {credits.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground"><CreditCard className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>No credit transactions yet.</p></div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {credits.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="text-sm">{new Date(c.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-sm">{c.profile?.username || c.profile?.email || "-"}</TableCell>
-                        <TableCell><Badge className={c.type === "credit" ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"}>{c.type}</Badge></TableCell>
-                        <TableCell className="font-medium">{c.type === "debit" ? "-" : "+"}{formatPrice(c.amount)}</TableCell>
-                        <TableCell className="text-sm">{c.description || "-"}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditCredit(c)}><Pencil className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget({ type: "credit", id: c.id })}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Action</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {credits.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="text-sm">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-sm">{c.profile?.username || c.profile?.email || "-"}</TableCell>
+                          <TableCell><Badge className={c.type === "credit" ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"}>{c.type}</Badge></TableCell>
+                          <TableCell className="font-medium">{c.type === "debit" ? "-" : "+"}{formatPrice(c.amount)}</TableCell>
+                          <TableCell className="text-sm">{c.description || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditCredit(c)}><Pencil className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget({ type: "credit", id: c.id })}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

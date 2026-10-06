@@ -147,7 +147,7 @@ export default function AdminMoneyTracking() {
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h1 className="text-xl font-bold">💰 টাকা ট্র্যাকিং</h1>
@@ -286,40 +286,42 @@ export default function AdminMoneyTracking() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden sm:block" id="money-tracking-table">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>অর্ডার #</TableHead>
-                  <TableHead>কাস্টমার</TableHead>
-                  <TableHead>ব্যক্তি</TableHead>
-                  <TableHead className="text-right">টাকা</TableHead>
-                  <TableHead>নোট</TableHead>
-                  <TableHead>তারিখ</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map(e => (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-medium">#{e.orders?.order_number}</TableCell>
-                    <TableCell>{e.orders?.customer_name || "N/A"}</TableCell>
-                    <TableCell><Badge variant="outline">{e.money_holders?.name}</Badge></TableCell>
-                    <TableCell className="text-right font-bold">৳{Number(e.amount).toLocaleString()}</TableCell>
-                    <TableCell className="text-xs max-w-[150px] truncate">{e.notes || "-"}</TableCell>
-                    <TableCell className="text-xs">{e.tracking_date}</TableCell>
-                    <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => deleteTracking.mutate(e.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+          <div className="hidden sm:block rounded-xl border bg-card shadow-xs overflow-hidden" id="money-tracking-table">
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>অর্ডার #</TableHead>
+                    <TableHead>কাস্টমার</TableHead>
+                    <TableHead>ব্যক্তি</TableHead>
+                    <TableHead className="text-right">টাকা</TableHead>
+                    <TableHead>নোট</TableHead>
+                    <TableHead>তারিখ</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-                {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(e => (
+                    <TableRow key={e.id}>
+                      <TableCell className="font-medium">#{e.orders?.order_number}</TableCell>
+                      <TableCell>{e.orders?.customer_name || "N/A"}</TableCell>
+                      <TableCell><Badge variant="outline">{e.money_holders?.name}</Badge></TableCell>
+                      <TableCell className="text-right font-bold">৳{Number(e.amount).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs max-w-[150px] truncate">{e.notes || "-"}</TableCell>
+                      <TableCell className="text-xs">{e.tracking_date}</TableCell>
+                      <TableCell>
+                        <Button size="icon" variant="ghost" onClick={() => deleteTracking.mutate(e.id)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filtered.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </TabsContent>
 

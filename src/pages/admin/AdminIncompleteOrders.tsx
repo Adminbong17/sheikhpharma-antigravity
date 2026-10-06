@@ -276,7 +276,7 @@ const AdminIncompleteOrders = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -379,9 +379,10 @@ const AdminIncompleteOrders = () => {
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden sm:block">
+      <Card className="hidden sm:block overflow-hidden shadow-xs">
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto w-full">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
@@ -424,6 +425,7 @@ const AdminIncompleteOrders = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

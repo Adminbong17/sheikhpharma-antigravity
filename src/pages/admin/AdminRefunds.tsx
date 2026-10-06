@@ -107,7 +107,7 @@ const AdminRefunds = () => {
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold">Refund Requests</h1>
@@ -144,7 +144,7 @@ const AdminRefunds = () => {
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden sm:block">
+      <Card className="hidden sm:block overflow-hidden shadow-xs">
         <CardContent className="p-0">
           {refunds.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
@@ -152,38 +152,40 @@ const AdminRefunds = () => {
               <p>No refund requests yet.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Order#</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Trx ID</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {refunds.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-mono text-sm">#{r.orders?.order_number || "-"}</TableCell>
-                    <TableCell className="text-sm">{r.orders?.customer_name || "-"}</TableCell>
-                    <TableCell className="text-sm">{r.vendors?.store_name || "-"}</TableCell>
-                    <TableCell className="font-medium">{formatPrice(r.amount)}</TableCell>
-                    <TableCell className="text-sm max-w-[150px] truncate">{r.reason || "-"}</TableCell>
-                    <TableCell>{statusBadge(r.status)}</TableCell>
-                    <TableCell className="text-sm">{r.admin_trx_id || "-"}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => openEdit(r)}>Update</Button>
-                    </TableCell>
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Order#</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Trx ID</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {refunds.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-mono text-sm">#{r.orders?.order_number || "-"}</TableCell>
+                      <TableCell className="text-sm">{r.orders?.customer_name || "-"}</TableCell>
+                      <TableCell className="text-sm">{r.vendors?.store_name || "-"}</TableCell>
+                      <TableCell className="font-medium">{formatPrice(r.amount)}</TableCell>
+                      <TableCell className="text-sm max-w-[150px] truncate">{r.reason || "-"}</TableCell>
+                      <TableCell>{statusBadge(r.status)}</TableCell>
+                      <TableCell className="text-sm">{r.admin_trx_id || "-"}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(r)}>Update</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

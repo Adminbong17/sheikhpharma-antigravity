@@ -126,7 +126,7 @@ const AdminUsers = () => {
   });
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl sm:text-2xl font-bold">Users</h1>
@@ -212,8 +212,9 @@ const AdminUsers = () => {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-lg border bg-card">
-        <Table>
+      <div className="hidden sm:block rounded-xl border bg-card shadow-xs overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <Table>
            <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
@@ -294,6 +295,7 @@ const AdminUsers = () => {
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <AlertDialog open={!!confirm} onOpenChange={(open) => !open && setConfirm(null)}>

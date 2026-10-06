@@ -239,7 +239,7 @@ const AdminCareers = () => {
   const isAlreadyStaff = (appId: string) => staffLinks.includes(appId);
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">

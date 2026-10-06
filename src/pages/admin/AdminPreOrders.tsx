@@ -26,7 +26,7 @@ const AdminPreOrders = () => {
   });
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center gap-3 flex-wrap">
         <Package className="h-6 w-6 text-primary" />
@@ -92,55 +92,57 @@ const AdminPreOrders = () => {
           </div>
 
           {/* Desktop table */}
-          <div className="rounded-lg border bg-card hidden sm:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Pre-Orders</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((p) => {
-                  const isAuto = !p.is_preorder && p.stock > 0 && p.stock < AUTO_PREORDER_THRESHOLD;
-                  return (
-                    <TableRow key={p.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          {p.image_url ? (
-                            <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded object-cover bg-muted" />
+          <div className="rounded-xl border bg-card hidden sm:block overflow-hidden shadow-xs">
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Pre-Orders</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((p) => {
+                    const isAuto = !p.is_preorder && p.stock > 0 && p.stock < AUTO_PREORDER_THRESHOLD;
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {p.image_url ? (
+                              <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded object-cover bg-muted" />
+                            ) : (
+                              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-lg">📦</div>
+                            )}
+                            <span className="font-medium line-clamp-1">{p.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatPrice(p.price)}</TableCell>
+                        <TableCell>
+                          <span className={p.stock <= 0 ? "text-destructive font-semibold" : p.stock < AUTO_PREORDER_THRESHOLD ? "text-yellow-600 font-semibold" : ""}>
+                            {p.stock}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {isAuto ? (
+                            <Badge variant="outline" className="gap-1 text-yellow-700 border-yellow-400">
+                              <AlertTriangle className="h-3 w-3" /> Auto
+                            </Badge>
                           ) : (
-                            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-lg">📦</div>
+                            <Badge className="bg-accent text-accent-foreground">Manual</Badge>
                           )}
-                          <span className="font-medium line-clamp-1">{p.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatPrice(p.price)}</TableCell>
-                      <TableCell>
-                        <span className={p.stock <= 0 ? "text-destructive font-semibold" : p.stock < AUTO_PREORDER_THRESHOLD ? "text-yellow-600 font-semibold" : ""}>
-                          {p.stock}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {isAuto ? (
-                          <Badge variant="outline" className="gap-1 text-yellow-700 border-yellow-400">
-                            <AlertTriangle className="h-3 w-3" /> Auto
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-accent text-accent-foreground">Manual</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-primary text-lg">
-                        {p.preorder_count || 0}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-primary text-lg">
+                          {p.preorder_count || 0}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </>
       )}

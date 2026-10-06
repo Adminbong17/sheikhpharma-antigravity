@@ -80,7 +80,7 @@ const AdminInvoices = () => {
     new Date(d).toLocaleDateString("en-BD", { year: "numeric", month: "short", day: "numeric" });
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -154,8 +154,9 @@ const AdminInvoices = () => {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-xl border bg-card">
-        <Table>
+      <div className="hidden sm:block rounded-xl border bg-card overflow-hidden shadow-xs">
+        <div className="overflow-x-auto w-full">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Invoice No.</TableHead>
@@ -227,6 +228,7 @@ const AdminInvoices = () => {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <InvoiceGeneratorDialog

@@ -118,7 +118,7 @@ const AdminCapital = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between">
         <div>
@@ -188,46 +188,48 @@ const AdminCapital = () => {
           </div>
 
           {/* Desktop table */}
-          <Card className="hidden sm:block">
+          <Card className="hidden sm:block overflow-hidden shadow-xs">
             <CardContent className="pt-6">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-3 font-medium">তারিখ</th>
-                    <th className="pb-3 font-medium">বিবরণ</th>
-                    <th className="pb-3 font-medium">উৎস</th>
-                    <th className="pb-3 font-medium">নোট</th>
-                    <th className="pb-3 font-medium text-right">পরিমাণ</th>
-                    <th className="pb-3 w-[80px]" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((e) => (
-                    <tr key={e.id} className="border-b last:border-0">
-                      <td className="py-3">{formatDate(e.entry_date)}</td>
-                      <td className="py-3">{e.description || "-"}</td>
-                      <td className="py-3">{e.source || "-"}</td>
-                      <td className="py-3 text-muted-foreground text-xs">{e.notes || "-"}</td>
-                      <td className="py-3 text-right font-semibold text-primary">৳{Number(e.amount).toLocaleString()}</td>
-                      <td className="py-3">
-                        <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={() => handleSendToCashBook(e)}>
-                            <Send className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("ডিলিট করবেন?")) deleteEntry.mutate(e.id); }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="pb-3 font-medium">তারিখ</th>
+                      <th className="pb-3 font-medium">বিবরণ</th>
+                      <th className="pb-3 font-medium">উৎস</th>
+                      <th className="pb-3 font-medium">নোট</th>
+                      <th className="pb-3 font-medium text-right">পরিমাণ</th>
+                      <th className="pb-3 w-[80px]" />
                     </tr>
-                  ))}
-                  <tr className="bg-muted/50 font-bold">
-                    <td className="py-3" colSpan={4}>মোট পুঁজি</td>
-                    <td className="py-3 text-right text-primary">৳{totalCapital.toLocaleString()}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filtered.map((e) => (
+                      <tr key={e.id} className="border-b last:border-0">
+                        <td className="py-3">{formatDate(e.entry_date)}</td>
+                        <td className="py-3">{e.description || "-"}</td>
+                        <td className="py-3">{e.source || "-"}</td>
+                        <td className="py-3 text-muted-foreground text-xs">{e.notes || "-"}</td>
+                        <td className="py-3 text-right font-semibold text-primary">৳{Number(e.amount).toLocaleString()}</td>
+                        <td className="py-3">
+                          <div className="flex gap-1 justify-end">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={() => handleSendToCashBook(e)}>
+                              <Send className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("ডিলিট করবেন?")) deleteEntry.mutate(e.id); }}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="bg-muted/50 font-bold">
+                      <td className="py-3" colSpan={4}>মোট পুঁজি</td>
+                      <td className="py-3 text-right text-primary">৳{totalCapital.toLocaleString()}</td>
+                      <td />
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </>

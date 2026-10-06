@@ -229,7 +229,7 @@ const AdminLabCenters = () => {
   const filtered = centers.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.address && c.address.toLowerCase().includes(search.toLowerCase())));
 
   return (
-    <div className="space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">

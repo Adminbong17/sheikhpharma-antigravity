@@ -258,7 +258,7 @@ const AdminPurchaseInvoices = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex flex-wrap items-center gap-3">
         <ShoppingBag className="h-6 w-6 text-primary" />

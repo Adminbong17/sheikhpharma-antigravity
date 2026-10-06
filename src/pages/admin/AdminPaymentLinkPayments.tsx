@@ -99,7 +99,7 @@ const AdminPaymentLinkPayments = () => {
   const totalSuccess = rows.filter((r) => r.status === "success").reduce((s, r) => s + Number(r.amount), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Link Payments</h1>

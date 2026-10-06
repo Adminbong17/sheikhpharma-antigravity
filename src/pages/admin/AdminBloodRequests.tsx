@@ -59,7 +59,7 @@ const AdminBloodRequests = () => {
   const donorCount = requests.filter(r => r.type === "donor").length;
 
   return (
-    <div className="p-3 sm:p-6 space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
         <Droplets className="h-6 w-6 text-red-500" /> ব্লাড ব্যাংক ম্যানেজমেন্ট
@@ -105,60 +105,62 @@ const AdminBloodRequests = () => {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>তারিখ</TableHead>
-                  <TableHead>ধরন</TableHead>
-                  <TableHead>নাম</TableHead>
-                  <TableHead>ফোন</TableHead>
-                  <TableHead>গ্রুপ</TableHead>
-                  <TableHead>লোকেশন</TableHead>
-                  <TableHead>স্ট্যাটাস</TableHead>
-                  <TableHead>অ্যাকশন</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-xs">{format(new Date(r.created_at), "dd MMM yy")}</TableCell>
-                    <TableCell>
-                      <Badge variant={r.type === "need" ? "destructive" : "secondary"} className={r.type === "donor" ? "bg-teal-100 text-teal-700" : ""}>
-                        {r.type === "need" ? "প্রয়োজন" : "দাতা"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell>
-                      <a href={`tel:${r.phone}`} className="text-primary underline">{r.phone}</a>
-                    </TableCell>
-                    <TableCell><span className="text-lg font-bold text-red-600">{r.blood_group}</span></TableCell>
-                    <TableCell className="text-xs max-w-[200px]">
-                      {[r.upazilla, r.zilla, r.division].filter(Boolean).join(", ") || "-"}
-                      {r.location && <p className="text-foreground font-medium mt-0.5">🏥 {r.location}</p>}
-                      {r.details && <p className="text-muted-foreground mt-0.5">{r.details}</p>}
-                    </TableCell>
-                    <TableCell>
-                      <Select value={r.status} onValueChange={(v) => handleStatusChange(r.id, v)}>
-                        <SelectTrigger className="h-8 w-[110px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDelete(r.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          <div className="hidden md:block rounded-xl border bg-card overflow-hidden shadow-xs">
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>তারিখ</TableHead>
+                    <TableHead>ধরন</TableHead>
+                    <TableHead>নাম</TableHead>
+                    <TableHead>ফোন</TableHead>
+                    <TableHead>গ্রুপ</TableHead>
+                    <TableHead>লোকেশন</TableHead>
+                    <TableHead>স্ট্যাটাস</TableHead>
+                    <TableHead>অ্যাকশন</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs">{format(new Date(r.created_at), "dd MMM yy")}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.type === "need" ? "destructive" : "secondary"} className={r.type === "donor" ? "bg-teal-100 text-teal-700" : ""}>
+                          {r.type === "need" ? "প্রয়োজন" : "দাতা"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{r.name}</TableCell>
+                      <TableCell>
+                        <a href={`tel:${r.phone}`} className="text-primary underline">{r.phone}</a>
+                      </TableCell>
+                      <TableCell><span className="text-lg font-bold text-red-600">{r.blood_group}</span></TableCell>
+                      <TableCell className="text-xs max-w-[200px]">
+                        {[r.upazilla, r.zilla, r.division].filter(Boolean).join(", ") || "-"}
+                        {r.location && <p className="text-foreground font-medium mt-0.5">🏥 {r.location}</p>}
+                        {r.details && <p className="text-muted-foreground mt-0.5">{r.details}</p>}
+                      </TableCell>
+                      <TableCell>
+                        <Select value={r.status} onValueChange={(v) => handleStatusChange(r.id, v)}>
+                          <SelectTrigger className="h-8 w-[110px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDelete(r.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Mobile Cards */}

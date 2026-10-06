@@ -180,7 +180,7 @@ const AdminCoupons = () => {
   if (isLoading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-2" />
       <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -326,62 +326,64 @@ const AdminCoupons = () => {
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden sm:block">
+      <Card className="hidden sm:block overflow-hidden shadow-xs">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Min Order</TableHead>
-                <TableHead>Uses</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(!coupons || coupons.length === 0) ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No coupons yet</TableCell></TableRow>
-              ) : coupons.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono font-bold">{c.code}</TableCell>
-                  <TableCell>{discountLabel(c)}</TableCell>
-                  <TableCell>৳{c.minimum_order_amount}</TableCell>
-                  <TableCell>{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</TableCell>
-                  <TableCell>
-                    {c.is_user_specific ? (
-                      <Badge variant="secondary" className="gap-1 text-[10px]"><Users className="h-3 w-3" /> User-Specific</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px]">Public</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{c.expires_at ? format(new Date(c.expires_at), "dd MMM yyyy") : "—"}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={c.is_active}
-                      onCheckedChange={async (v) => {
-                        try {
-                          await updateCoupon.mutateAsync({ id: c.id, is_active: v });
-                          toast.success(v ? "Coupon activated" : "Coupon deactivated");
-                        } catch (err: any) { toast.error(err.message); }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    {c.is_user_specific && (
-                      <Button variant="ghost" size="icon" onClick={() => { setAssignCouponId(c.id); setAssignOpen(true); }} title="Manage Users">
-                        <Users className="h-4 w-4 text-primary" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                  </TableCell>
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-4">Code</TableHead>
+                  <TableHead>Discount</TableHead>
+                  <TableHead>Min Order</TableHead>
+                  <TableHead>Uses</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right pr-4">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {(!coupons || coupons.length === 0) ? (
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No coupons yet</TableCell></TableRow>
+                ) : coupons.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-mono font-bold pl-4">{c.code}</TableCell>
+                    <TableCell>{discountLabel(c)}</TableCell>
+                    <TableCell>৳{c.minimum_order_amount}</TableCell>
+                    <TableCell>{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</TableCell>
+                    <TableCell>
+                      {c.is_user_specific ? (
+                        <Badge variant="secondary" className="gap-1 text-[10px]"><Users className="h-3 w-3" /> User-Specific</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">Public</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{c.expires_at ? format(new Date(c.expires_at), "dd MMM yyyy") : "—"}</TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={c.is_active}
+                        onCheckedChange={async (v) => {
+                          try {
+                            await updateCoupon.mutateAsync({ id: c.id, is_active: v });
+                            toast.success(v ? "Coupon activated" : "Coupon deactivated");
+                          } catch (err: any) { toast.error(err.message); }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right space-x-1 pr-4">
+                      {c.is_user_specific && (
+                        <Button variant="ghost" size="icon" onClick={() => { setAssignCouponId(c.id); setAssignOpen(true); }} title="Manage Users">
+                          <Users className="h-4 w-4 text-primary" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

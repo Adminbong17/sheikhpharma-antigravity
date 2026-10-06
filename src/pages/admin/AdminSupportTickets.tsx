@@ -145,7 +145,7 @@ const AdminSupportTickets = () => {
   });
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Support Tickets</h1>

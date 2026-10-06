@@ -416,7 +416,7 @@ const AdminInvestments = () => {
   // ─── Investor Detail View ─────────────────────────────────────────
   if (selectedInvestor) {
     return (
-       <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => { setSelectedInvestor(null); setDetailTab("investments"); }}><ArrowLeft className="h-5 w-5" /></Button>
           <div>
@@ -483,39 +483,41 @@ const AdminInvestments = () => {
                 {transactions.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">No entries yet</p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-[50px]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((t) => (
-                        <TableRow key={t.id}>
-                          <TableCell>{formatDate(t.transaction_date)}</TableCell>
-                          <TableCell>
-                            <Badge variant={t.type === "investment" ? "default" : "secondary"} className="capitalize">{t.type}</Badge>
-                          </TableCell>
-                          <TableCell>{t.description || "-"}</TableCell>
-                          <TableCell className="text-right font-semibold">৳{Number(t.amount).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this entry?")) deleteTx.mutate(t.id); }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TableCell>
+                  <div className="overflow-x-auto w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="w-[50px]" />
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={3}>Sub Total</TableCell>
-                        <TableCell className="text-right">৳{totalInvestment.toLocaleString()}</TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((t) => (
+                          <TableRow key={t.id}>
+                            <TableCell>{formatDate(t.transaction_date)}</TableCell>
+                            <TableCell>
+                              <Badge variant={t.type === "investment" ? "default" : "secondary"} className="capitalize">{t.type}</Badge>
+                            </TableCell>
+                            <TableCell>{t.description || "-"}</TableCell>
+                            <TableCell className="text-right font-semibold">৳{Number(t.amount).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this entry?")) deleteTx.mutate(t.id); }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={3}>Sub Total</TableCell>
+                          <TableCell className="text-right">৳{totalInvestment.toLocaleString()}</TableCell>
+                          <TableCell />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -527,41 +529,43 @@ const AdminInvestments = () => {
                 {expenses.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">No expenses yet</p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="text-center">Qty</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead>Expense By</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-[50px]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {expenses.map((e) => (
-                        <TableRow key={e.id}>
-                          <TableCell>{formatDate(e.expense_date)}</TableCell>
-                          <TableCell className="font-medium">{e.name}</TableCell>
-                          <TableCell className="text-center">{e.quantity}</TableCell>
-                          <TableCell>{e.source || "-"}</TableCell>
-                          <TableCell>{e.expense_by || "-"}</TableCell>
-                          <TableCell className="text-right font-semibold text-destructive">৳{Number(e.amount).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this expense?")) deleteExpense.mutate(e.id); }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TableCell>
+                  <div className="overflow-x-auto w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead>Expense By</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="w-[50px]" />
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={5}>Total Expenses</TableCell>
-                        <TableCell className="text-right text-destructive">৳{totalExpense.toLocaleString()}</TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {expenses.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell>{formatDate(e.expense_date)}</TableCell>
+                            <TableCell className="font-medium">{e.name}</TableCell>
+                            <TableCell className="text-center">{e.quantity}</TableCell>
+                            <TableCell>{e.source || "-"}</TableCell>
+                            <TableCell>{e.expense_by || "-"}</TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">৳{Number(e.amount).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this expense?")) deleteExpense.mutate(e.id); }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={5}>Total Expenses</TableCell>
+                          <TableCell className="text-right text-destructive">৳{totalExpense.toLocaleString()}</TableCell>
+                          <TableCell />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -656,7 +660,7 @@ const AdminInvestments = () => {
 
   // ─── Investors List View ──────────────────────────────────────────
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between">
         <div>

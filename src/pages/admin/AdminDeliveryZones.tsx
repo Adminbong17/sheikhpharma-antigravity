@@ -212,7 +212,7 @@ const AdminDeliveryZones = () => {
   const totalActive = zones.filter((z) => z.is_active).length;
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-3" />
       <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -323,57 +323,59 @@ const AdminDeliveryZones = () => {
                 </button>
                 {isExpanded && (
                   <CardContent className="pt-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Zilla</TableHead>
-                          <TableHead>Upazilla</TableHead>
-                          <TableHead>Area</TableHead>
-                          <TableHead>Level</TableHead>
-                          <TableHead className="text-right">Charge (৳)</TableHead>
-                          <TableHead className="text-center">Active</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {divZones.map((z) => (
-                          <TableRow key={z.id} className={!z.is_active ? "opacity-50" : ""}>
-                            <TableCell className="font-medium">{levelLabel(z)}</TableCell>
-                            <TableCell className="text-muted-foreground">{z.zilla || "—"}</TableCell>
-                            <TableCell className="text-muted-foreground">{z.upazilla || "—"}</TableCell>
-                            <TableCell className="text-muted-foreground">{z.area || "—"}</TableCell>
-                            <TableCell>
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                z.area ? "bg-green-500/10 text-green-700" :
-                                z.upazilla ? "bg-primary/10 text-primary" :
-                                z.zilla ? "bg-accent/10 text-accent-foreground" :
-                                "bg-muted text-muted-foreground"
-                              }`}>
-                                {levelType(z)}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">৳{z.charge}</TableCell>
-                            <TableCell className="text-center">
-                              <Switch
-                                checked={z.is_active}
-                                onCheckedChange={() => handleToggleActive(z)}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button size="icon" variant="ghost" onClick={() => openEdit(z)} title="Edit">
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(z.id)} title="Delete">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                    <div className="overflow-x-auto w-full">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Zilla</TableHead>
+                            <TableHead>Upazilla</TableHead>
+                            <TableHead>Area</TableHead>
+                            <TableHead>Level</TableHead>
+                            <TableHead className="text-right">Charge (৳)</TableHead>
+                            <TableHead className="text-center">Active</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {divZones.map((z) => (
+                            <TableRow key={z.id} className={!z.is_active ? "opacity-50" : ""}>
+                              <TableCell className="font-medium">{levelLabel(z)}</TableCell>
+                              <TableCell className="text-muted-foreground">{z.zilla || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{z.upazilla || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{z.area || "—"}</TableCell>
+                              <TableCell>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  z.area ? "bg-green-500/10 text-green-700" :
+                                  z.upazilla ? "bg-primary/10 text-primary" :
+                                  z.zilla ? "bg-accent/10 text-accent-foreground" :
+                                  "bg-muted text-muted-foreground"
+                                }`}>
+                                  {levelType(z)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">৳{z.charge}</TableCell>
+                              <TableCell className="text-center">
+                                <Switch
+                                  checked={z.is_active}
+                                  onCheckedChange={() => handleToggleActive(z)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="icon" variant="ghost" onClick={() => openEdit(z)} title="Edit">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(z.id)} title="Delete">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 )}
               </Card>

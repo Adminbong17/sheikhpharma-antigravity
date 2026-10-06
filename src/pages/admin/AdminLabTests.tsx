@@ -76,7 +76,7 @@ const AdminLabTests = () => {
   const filtered = tests.filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.name_bn && t.name_bn.includes(search)));
 
   return (
-    <div className="space-y-4">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">

@@ -242,7 +242,7 @@ const AdminExpenses = () => {
   const purchaseItemsTotal = purchaseForm.items.reduce((s, i) => s + (i.quantity * i.unit_price), 0);
 
   return (
-    <div className="p-3 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-w-0">
       <BackButton className="mb-1" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -366,56 +366,58 @@ const AdminExpenses = () => {
               </div>
 
               {/* Desktop table */}
-              <Card className="hidden sm:block">
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Who Invest</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="text-center">Qty</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead>Expense By</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-[50px]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((e) => (
-                        <TableRow key={e.id}>
-                          <TableCell>{formatDate(e.expense_date)}</TableCell>
-                          <TableCell className="font-medium">{e.investor_name}</TableCell>
-                          <TableCell>{e.name}</TableCell>
-                          <TableCell className="text-center">{e.quantity}</TableCell>
-                          <TableCell>{e.source || "-"}</TableCell>
-                          <TableCell>{e.expense_by || "-"}</TableCell>
-                          <TableCell className="text-right font-semibold text-destructive">৳{Number(e.amount).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={async () => {
-                                try {
-                                  await sendToCashBook({ type: "cash_out", amount: Number(e.amount), transaction_id: `EXP-${e.id.slice(0, 8)}`, description: e.name, category: "Investment Expense", transaction_date: e.expense_date });
-                                  qc.invalidateQueries({ queryKey: ["cash_transactions"] });
-                                  toast.success("Cash Book এ পাঠানো হয়েছে!");
-                                } catch (err: any) { toast.error(err.message || "Failed to send"); }
-                              }}>
-                                <Send className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this expense?")) deleteExpense.mutate(e.id); }}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+              <Card className="hidden sm:block overflow-hidden shadow-xs">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="pl-4">Date</TableHead>
+                          <TableHead>Who Invest</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead>Expense By</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="w-[50px] pr-4" />
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={6}>Total</TableCell>
-                        <TableCell className="text-right text-destructive">৳{totalExpense.toLocaleString()}</TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell className="pl-4">{formatDate(e.expense_date)}</TableCell>
+                            <TableCell className="font-medium">{e.investor_name}</TableCell>
+                            <TableCell>{e.name}</TableCell>
+                            <TableCell className="text-center">{e.quantity}</TableCell>
+                            <TableCell>{e.source || "-"}</TableCell>
+                            <TableCell>{e.expense_by || "-"}</TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">৳{Number(e.amount).toLocaleString()}</TableCell>
+                            <TableCell className="pr-4">
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={async () => {
+                                  try {
+                                    await sendToCashBook({ type: "cash_out", amount: Number(e.amount), transaction_id: `EXP-${e.id.slice(0, 8)}`, description: e.name, category: "Investment Expense", transaction_date: e.expense_date });
+                                    qc.invalidateQueries({ queryKey: ["cash_transactions"] });
+                                    toast.success("Cash Book এ পাঠানো হয়েছে!");
+                                  } catch (err: any) { toast.error(err.message || "Failed to send"); }
+                                }}>
+                                  <Send className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this expense?")) deleteExpense.mutate(e.id); }}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={6} className="pl-4">Total</TableCell>
+                          <TableCell className="text-right text-destructive">৳{totalExpense.toLocaleString()}</TableCell>
+                          <TableCell className="pr-4" />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </>
@@ -479,64 +481,66 @@ const AdminExpenses = () => {
               </div>
 
               {/* Desktop table */}
-              <Card className="hidden sm:block">
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Invoice#</TableHead>
-                        <TableHead>Supplier</TableHead>
-                        <TableHead>Products</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="w-[50px]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPurchases.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>{formatDate(p.purchase_date)}</TableCell>
-                          <TableCell className="font-mono text-xs">{p.invoice_number}</TableCell>
-                          <TableCell>{p.supplier_name || "-"}</TableCell>
-                          <TableCell>
-                            <div className="text-xs space-y-0.5">
-                              {(p.items || []).map((item: any, i: number) => (
-                                <div key={i}>{item.name} × {item.quantity}</div>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${p.payment_status === 'paid' ? 'bg-green-100 text-green-700' : p.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                              {p.payment_status}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-destructive">৳{Number(p.total).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={async () => {
-                                try {
-                                  await sendToCashBook({ type: "cash_out", amount: Number(p.total), transaction_id: `PUR-${p.id.slice(0, 8)}`, description: p.supplier_name || "Product Purchase", category: "Product Purchase", transaction_date: p.purchase_date });
-                                  qc.invalidateQueries({ queryKey: ["cash_transactions"] });
-                                  toast.success("Cash Book এ পাঠানো হয়েছে!");
-                                } catch (err: any) { toast.error(err.message || "Failed to send"); }
-                              }}>
-                                <Send className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this purchase?")) deletePurchase.mutate(p.id); }}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+              <Card className="hidden sm:block overflow-hidden shadow-xs">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="pl-4">Date</TableHead>
+                          <TableHead>Invoice#</TableHead>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Products</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead className="w-[50px] pr-4" />
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={5}>Total</TableCell>
-                        <TableCell className="text-right text-destructive">৳{purchaseTotal.toLocaleString()}</TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPurchases.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell className="pl-4">{formatDate(p.purchase_date)}</TableCell>
+                            <TableCell className="font-mono text-xs">{p.invoice_number}</TableCell>
+                            <TableCell>{p.supplier_name || "-"}</TableCell>
+                            <TableCell>
+                              <div className="text-xs space-y-0.5">
+                                {(p.items || []).map((item: any, i: number) => (
+                                  <div key={i}>{item.name} × {item.quantity}</div>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${p.payment_status === 'paid' ? 'bg-green-100 text-green-700' : p.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                {p.payment_status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">৳{Number(p.total).toLocaleString()}</TableCell>
+                            <TableCell className="pr-4">
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Send to Cash Book" onClick={async () => {
+                                  try {
+                                    await sendToCashBook({ type: "cash_out", amount: Number(p.total), transaction_id: `PUR-${p.id.slice(0, 8)}`, description: p.supplier_name || "Product Purchase", category: "Product Purchase", transaction_date: p.purchase_date });
+                                    qc.invalidateQueries({ queryKey: ["cash_transactions"] });
+                                    toast.success("Cash Book এ পাঠানো হয়েছে!");
+                                  } catch (err: any) { toast.error(err.message || "Failed to send"); }
+                                }}>
+                                  <Send className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this purchase?")) deletePurchase.mutate(p.id); }}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={5} className="pl-4">Total</TableCell>
+                          <TableCell className="text-right text-destructive">৳{purchaseTotal.toLocaleString()}</TableCell>
+                          <TableCell className="pr-4" />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </>
