@@ -717,8 +717,9 @@ const AdminOrders = () => {
       </div>
 
       {/* Desktop table layout */}
-      <div className="hidden sm:block rounded-lg border bg-card">
-        <Table>
+      <div className="hidden sm:block rounded-lg border bg-card overflow-hidden shadow-xs">
+        <div className="overflow-x-auto w-full">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
@@ -812,6 +813,7 @@ const AdminOrders = () => {
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Order Details Sheet */}
