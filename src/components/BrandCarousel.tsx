@@ -23,7 +23,7 @@ const BrandCarousel = () => {
         .eq("status", "approved")
         .order("name");
       if (error) throw error;
-      return (data || []).filter((b: any) => b.is_active !== false);
+      return (data || []).filter((b: any) => b.is_active !== false && Boolean(b.logo_url && b.logo_url.trim() !== ""));
     },
   });
 
