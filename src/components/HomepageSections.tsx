@@ -263,7 +263,7 @@ const HomepageSections = () => {
               </div>
               {/* Banners after this section */}
               {(sectionBanners[sec.id] || []).length > 0 && (
-                <div className="container mx-auto px-4 mt-4">
+                <div className="mt-6 w-full">
                   <BannerCarousel banners={sectionBanners[sec.id]} />
                 </div>
               )}

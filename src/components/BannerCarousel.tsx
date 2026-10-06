@@ -44,13 +44,13 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
   if (banners.length === 1) {
     const banner = banners[0];
     return (
-      <div className="overflow-hidden rounded-xl border-2 border-primary animate-float">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm transition hover:shadow-md">
         {banner.link_url ? (
-          <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
-            <img src={banner.image_url} alt="Banner" className="w-full object-cover aspect-[1000/432]" loading="lazy" />
+          <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+            <img src={banner.image_url} alt="Section Banner" className="w-full object-cover aspect-[1000/200]" loading="lazy" />
           </a>
         ) : (
-          <img src={banner.image_url} alt="Banner" className="w-full object-cover aspect-[1000/432]" loading="lazy" />
+          <img src={banner.image_url} alt="Section Banner" className="w-full object-cover aspect-[1000/200]" loading="lazy" />
         )}
       </div>
     );
@@ -59,7 +59,10 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
   const slides = [...banners, banners[0]];
 
   return (
-    <div className="relative overflow-hidden rounded-xl border-2 border-primary animate-float" style={{ aspectRatio: "1000/432" }}>
+    <div
+      className="relative overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm aspect-[1000/200] w-full"
+      style={{ aspectRatio: "1000/200" }}
+    >
       <div
         className={`flex h-full ${isTransitioning ? "transition-transform duration-700 ease-in-out" : ""}`}
         style={{
@@ -70,7 +73,7 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
       >
         {slides.map((banner, idx) => {
           const content = (
-            <img src={banner.image_url} alt="Banner" className="h-full w-full object-cover" loading="lazy" />
+            <img src={banner.image_url} alt="Section Banner" className="h-full w-full object-cover aspect-[1000/200]" loading="lazy" />
           );
           return (
             <div key={`${banner.id}-${idx}`} className="relative h-full flex-shrink-0" style={{ width: `${100 / slides.length}%` }}>
@@ -85,20 +88,21 @@ const BannerCarousel = ({ banners }: { banners: Banner[] }) => {
       </div>
 
       {/* Navigation arrows */}
-      <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/50">
+      <button onClick={prev} aria-label="Previous slide" className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/70">
         <ChevronLeft className="h-5 w-5" />
       </button>
-      <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/50">
+      <button onClick={next} aria-label="Next slide" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/70">
         <ChevronRight className="h-5 w-5" />
       </button>
 
       {/* Dots */}
-      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+      <div className="absolute bottom-2.5 left-1/2 flex -translate-x-1/2 gap-1.5">
         {banners.map((_, i) => (
           <button
             key={i}
+            aria-label={`Go to slide ${i + 1}`}
             onClick={() => { setIsTransitioning(true); setCurrent(i); }}
-            className={`h-2 rounded-full transition-all ${i === (current % banners.length) ? "w-6 bg-white" : "w-2 bg-white/50"}`}
+            className={`h-1.5 rounded-full transition-all ${i === (current % banners.length) ? "w-6 bg-white shadow-sm" : "w-1.5 bg-white/50"}`}
           />
         ))}
       </div>
