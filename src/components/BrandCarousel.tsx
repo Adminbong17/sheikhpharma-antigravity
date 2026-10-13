@@ -21,9 +21,10 @@ const BrandCarousel = () => {
         .from("brands")
         .select("*")
         .eq("status", "approved")
+        .eq("is_active", true)
         .order("name");
       if (error) throw error;
-      return (data || []).filter((b: any) => b.is_active !== false && Boolean(b.logo_url && b.logo_url.trim() !== ""));
+      return (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
     },
   });
 

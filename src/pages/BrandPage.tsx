@@ -17,11 +17,47 @@ import { isEffectivePreorder } from "@/lib/preorder";
 import { toast } from "sonner";
 import TrustBadges from "@/components/TrustBadges";
 
+// Map deprecated/duplicate brand IDs to real brand IDs with active products
+const DUPLICATE_BRAND_REDIRECTS: Record<string, string> = {
+  "3936e4c6-df34-443e-ae41-3d34a63b5866": "1b028d29-e3e1-4c1c-8317-66c459a24214", // SQUARE -> Square Pharmaceuticals PLC
+  "66a050ea-d952-40a3-a68f-20f9b79e9444": "dad52299-a1ae-4de4-ac43-c26e713ae598", // Incepta Pharmacuticals Ltd.
+  "0e1b5b60-0146-41ab-bd68-2cd05b56213d": "154261be-cba3-438a-8ba2-7c3cdee6b0fa", // Aristophrma Ltd.
+  "0970ecb0-f6e4-42f8-bbe1-5417403ea077": "a26fc38a-98ab-4639-8160-0012ccdd5ccd", // Renata Pharmacuticals Ltd.
+  "1e430944-12ac-46e5-9232-3f97f66e0b1d": "a3a57132-1c7e-430b-b61a-4cd4f3f5411c", // ACI Pharmacuticals Ltd.
+  "7f32f9a2-8c70-46c8-a997-901c9a8dd84a": "ee0630bc-f5bc-468b-a013-04dc688c04c8", // Genarel Pharmaceuticals Ltd.
+  "49acd704-eb29-48ac-ac61-1244e9a0a5c9": "dcb26393-28a2-4a5a-a8d7-9a09d7a6cb5f", // Opsonin Pharma Limited
+  "a738118e-d4bf-4397-9b97-0507b7ea5ed0": "cf1ea801-a166-46a6-bfc3-519d1059eb45", // Navana Pharmacuticals Ltd.
+  "7fc19220-f667-455a-ab4d-cf3009d03d2f": "ddbd2d3b-5b59-43f7-ac66-f879cd31d4fc", // Popular Pharmacuticals Ltd.
+  "a4b2ebef-e094-4a19-9655-9b892d277382": "ddbd2d3b-5b59-43f7-ac66-f879cd31d4fc", // Popular Pharmaceuticals PLC
+  "21db0eec-906a-4058-bb3d-e1b8bc36c97c": "c5eadf80-bf4a-4ce9-a5a1-2b2ead61e496", // SK+F Pharmacuticals Ltd.
+  "b8bfda0c-cae3-44fe-ab6f-926e8fb997c9": "e20f2129-b3e6-432e-8659-94416109420c", // Beacon Pharmaceuticals Plc.
+  "d1a3a700-82aa-4bb6-ad82-60073749a712": "e9117c9c-d9ec-493f-bd46-93dd567a2583", // Radiant Pharmaceuticals Limited
+  "062c294e-f748-4c9f-acf6-8194e2328722": "3b3aff37-860c-4de5-b94a-0096e9c7c116", // The Ibn Sina Pharmaceutical Ltd.
+  "3a19d60c-4d2a-404c-b2b7-52c41e5ef7fe": "c6401011-a0ad-4521-9ee2-68ca53a06750", // SMC Wellness
+  "0afb0adb-dc86-4830-bfba-147350835ba4": "67a0bf9e-ff79-4dec-94c9-a276565506c5", // Delta Pharma Limited.
+  "c44e977a-a4d9-4ee9-8fa0-68774f8187cf": "67a0bf9e-ff79-4dec-94c9-a276565506c5", // Delta Pharma PLC.
+  "e2230373-f24e-4d85-a11f-78c75fde86d6": "8b2f72fb-d210-4bf7-8b3a-b4e8e2d90708", // OSL Pharma Limited.
+  "5a3faa25-21d8-4c03-bf06-7cd021f27f80": "0ddcbb92-40d6-4022-b1d8-063f0e6aad92", // Jayson Pharmaceuticals Ltd.
+  "4f3d7ee8-0376-4941-b2d4-179057b20fef": "dfc62a9b-97b1-4008-ab96-667344075a6b", // Labaid Pharmacuticals Ltd.
+  "dc791a54-70b3-493d-a3f0-9990271adb6b": "d1788eb9-f7d1-440e-9e42-e775a7df2973", // Sun Pharmacutical Ltd.
+  "7457b54e-d475-4b45-8eb0-81e71b629b00": "5ad4fb78-bd13-468f-a1f3-bba170685bff", // Unimed Uniheath Pharmaceuticals Ltd.
+  "1b99aaf8-da57-4321-bdea-ec444c0c5f92": "3c9d87b0-81c1-46de-9891-3ad334e6970e", // Nipro Jmi Pharma Limited.
+  "ac1d5c02-fd80-49ab-bf88-cd09fa4c4460": "7213c050-758b-4f6a-a0fa-9351c7c3e46f", // Hamdard Laboratories.
+  "5c4ac41c-1d7d-49c5-b559-16ea315f35d4": "f2755b46-cef1-44f0-95ea-3b1f5567acb8", // Getwell
+};
+
 const BrandPage = () => {
   const { id } = useParams<{ id: string }>();
   const { formatPrice } = useCurrency();
   const { addItem } = useCart();
   const navigate = useNavigate();
+
+  const effectiveId = (id && DUPLICATE_BRAND_REDIRECTS[id]) || id;
+
+  // Immediate redirect for known duplicate IDs
+  if (id && DUPLICATE_BRAND_REDIRECTS[id]) {
+    navigate(`/brand/${DUPLICATE_BRAND_REDIRECTS[id]}`, { replace: true });
+  }
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -30,25 +66,48 @@ const BrandPage = () => {
   const [inStockOnly, setInStockOnly] = useState(false);
 
   const { data: brand } = useQuery({
-    queryKey: ["brand", id],
+    queryKey: ["brand", effectiveId],
     queryFn: async () => {
-      const { data } = await supabase.from("brands").select("*").eq("id", id!).single();
+      const { data } = await supabase.from("brands").select("*").eq("id", effectiveId!).single();
       return data;
     },
   });
 
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["brand-products", id],
+    queryKey: ["brand-products", effectiveId],
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
         .select("*")
-        .eq("brand_id", id!)
+        .eq("brand_id", effectiveId!)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       return data || [];
     },
   });
+
+  // Dynamic fallback: if a brand has 0 products, try finding active brand with matching name root
+  const { data: fallbackBrandId } = useQuery({
+    queryKey: ["brand-fallback", brand?.name],
+    enabled: Boolean(brand && products.length === 0 && !isLoading),
+    queryFn: async () => {
+      if (!brand?.name) return null;
+      const firstWord = brand.name.replace(/[^a-zA-Z0-9]/g, " ").trim().split(" ")[0];
+      if (!firstWord || firstWord.length < 3) return null;
+      const { data } = await supabase
+        .from("brands")
+        .select("id")
+        .ilike("name", `%${firstWord}%`)
+        .eq("is_active", true)
+        .neq("id", effectiveId!)
+        .limit(1);
+      return data?.[0]?.id || null;
+    },
+  });
+
+  if (fallbackBrandId && fallbackBrandId !== effectiveId) {
+    navigate(`/brand/${fallbackBrandId}`, { replace: true });
+  }
 
   const filtered = useMemo(() => {
     let list = [...products];
