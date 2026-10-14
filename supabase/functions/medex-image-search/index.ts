@@ -49,31 +49,45 @@ Deno.serve(async (req) => {
 
   try {
     // Auth check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const authHeader = req.headers.get('Authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+    let isAuthorized = false;
+
+    // Check if token has service_role or admin/vendor
+    try {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payloadStr = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+        const payload = JSON.parse(payloadStr);
+        if (payload.role === 'service_role') {
+          isAuthorized = true;
+        }
+      }
+    } catch (_e) {
+      // ignore token parse error
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!isAuthorized && token) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
       });
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (!userError && user) {
+        const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+        const userRoles = (roles || []).map((r: any) => r.role);
+        if (userRoles.includes('admin') || userRoles.includes('vendor')) {
+          isAuthorized = true;
+        }
+      }
     }
 
-    const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
-    const userRoles = (roles || []).map((r: any) => r.role);
-    if (!userRoles.includes('admin') && !userRoles.includes('vendor')) {
-      return new Response(JSON.stringify({ success: false, error: 'Forbidden' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: admin or vendor role required' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
