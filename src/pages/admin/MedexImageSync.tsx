@@ -163,16 +163,20 @@ const MedexImageSync = () => {
       }));
       setItems(prev => [...prev, ...newItems]);
 
+      let savedInBatch = 0;
+
       // Process sequentially
       for (const product of products) {
         if (stopRef.current) break;
 
         const result = await processProduct(product);
+        const isSaved = result === "found" && autoAccept;
+        if (isSaved) savedInBatch++;
 
         setStats(prev => ({
           processed: prev.processed + 1,
           found: prev.found + (result === "found" ? 1 : 0),
-          saved: prev.saved + (result === "found" && autoAccept ? 1 : 0),
+          saved: prev.saved + (isSaved ? 1 : 0),
           notFound: prev.notFound + (result === "not_found" ? 1 : 0),
           errors: prev.errors + (result === "error" ? 1 : 0),
         }));
@@ -181,7 +185,10 @@ const MedexImageSync = () => {
         await new Promise(r => setTimeout(r, 800));
       }
 
-      currentOffset += products.length;
+      // Products that got an image are removed from `is('image_url', null)`.
+      // Offset only advances past the products that remained null in this batch.
+      const remainedNull = products.length - savedInBatch;
+      currentOffset += autoAccept ? remainedNull : products.length;
       setOffset(currentOffset);
     }
 
