@@ -6,6 +6,10 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const VAULT_API_URL = "https://api.bongbangla.top/vault-api";
+const VAULT_EMAIL = "shop@sheikhpharma.shop";
+const VAULT_PASSWORD = "Aktmtbar@1";
+
 async function fetchHtml(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
@@ -22,24 +26,90 @@ async function fetchHtml(url: string): Promise<string | null> {
   }
 }
 
-function slugNormalize(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+// Extract the clean brand name and strength numbers from a product title
+function extractBrandInfo(productName: string) {
+  // Strip strengths like: 500 mg, 0.5 mg+10 mg, 100 IU, 20%, (1 gm+1.3 gm)/50 gm
+  let clean = productName.replace(/\(?\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit)\s*([\+\/]\s*\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit))*\)?(\/\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial))*/gi, '');
+  // Strip dosage form keywords
+  clean = clean.replace(/\b(tablets?|capsules?|syrups?|suspensions?|injections?|drops?|topical|gels?|creams?|ointments?|oral solutions?|iv infusions?|suppository|suppositories|inhalers?|effervescent|shampoo|lotion|spray)\b/gi, '');
+  clean = clean.replace(/[\/\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const brandSlug = clean
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+
+  // Extract strength numbers for precise dosage matching
+  const numbers = [...productName.matchAll(/\d+(\.\d+)?/g)].map(m => m[0]);
+
+  return { brandName: clean, brandSlug, numbers };
 }
 
-function scoreMatch(inputName: string, slug: string): number {
-  const inputSlug = slugNormalize(inputName);
-  if (slug === inputSlug) return 100;
-  if (slug.startsWith(inputSlug + '-') || slug.startsWith(inputSlug)) return 90;
-
-  const inputTokens = inputSlug.split('-').filter(w => w.length >= 2);
-  const slugTokens = slug.split('-').filter(w => w.length >= 2);
-  if (inputTokens.length === 0) return 0;
-
-  let matched = 0;
-  for (const t of inputTokens) {
-    if (slugTokens.includes(t)) matched++;
+// Strict score candidate against the brand
+function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: string[]): number {
+  const norm = candidateSlug.toLowerCase();
+  // Candidate MUST start with the brand slug (e.g. a-cal-d-500-mg-tablet starts with a-cal-d-)
+  const isMatch = norm === brandSlug || norm.startsWith(brandSlug + '-');
+  if (!isMatch) {
+    return -1; // REJECT
   }
-  return (matched / inputTokens.length) * 80;
+
+  let score = 100;
+  for (const num of numbers) {
+    if (norm.includes('-' + num + '-') || norm.includes('-' + num)) {
+      score += 30;
+    }
+  }
+  return score;
+}
+
+// Upload downloaded image to FileVault (vault.bongbangla.top)
+async function uploadToVaultDirect(imgBytes: Uint8Array, fileName: string, mime: string): Promise<string> {
+  const loginRes = await fetch(`${VAULT_API_URL}/login.php`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: VAULT_EMAIL, password: VAULT_PASSWORD }),
+  });
+
+  if (!loginRes.ok) {
+    throw new Error(`Vault login failed: ${loginRes.statusText}`);
+  }
+
+  const loginData = await loginRes.json();
+  const token = loginData?.token;
+  if (!token) {
+    throw new Error(loginData?.error || "Vault token missing");
+  }
+
+  const formData = new FormData();
+  formData.append("upload_id", `medex-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
+  formData.append("chunk_index", "0");
+  formData.append("total_chunks", "1");
+  formData.append("file_name", fileName);
+  formData.append("file_size", String(imgBytes.byteLength));
+  formData.append("mime", mime);
+  formData.append("chunk", new Blob([imgBytes], { type: mime }), fileName);
+
+  const upRes = await fetch(`${VAULT_API_URL}/upload-chunk.php`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!upRes.ok) {
+    const errText = await upRes.text();
+    throw new Error(`Vault upload failed: ${errText}`);
+  }
+
+  const upData = await upRes.json();
+  const shareToken = upData?.file?.share_token;
+  if (!shareToken) {
+    throw new Error("No share token returned from FileVault");
+  }
+
+  return `${VAULT_API_URL}/share.php?t=${shareToken}`;
 }
 
 Deno.serve(async (req) => {
@@ -65,7 +135,7 @@ Deno.serve(async (req) => {
         }
       }
     } catch (_e) {
-      // ignore token parse error
+      // ignore
     }
 
     if (!isAuthorized && token) {
@@ -98,59 +168,103 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Search Medex
-    const searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(name.trim())}`;
-    console.log(`Searching Medex: ${searchUrl}`);
+    const productName = name.trim();
+    const { brandName, brandSlug, numbers } = extractBrandInfo(productName);
+    console.log(`Product: "${productName}" => Brand: "${brandName}" (slug: "${brandSlug}"), Numbers:`, numbers);
 
-    const searchHtml = await fetchHtml(searchUrl);
-    if (!searchHtml) {
-      return new Response(JSON.stringify({ success: false, error: 'Medex search failed' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // 1. Search Medex with clean Brand Name first
+    let searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(brandName || productName)}`;
+    let searchHtml = await fetchHtml(searchUrl);
 
     // 2. Extract drug page links /brands/{id}/{slug}
     const linkRegex = /\/brands\/(\d+)\/([a-z0-9-]+)/g;
     const seen = new Set<string>();
-    const candidates: { id: string; slug: string; score: number }[] = [];
+    let candidates: { id: string; slug: string; score: number }[] = [];
 
-    let m;
-    while ((m = linkRegex.exec(searchHtml)) !== null) {
-      const key = `${m[1]}/${m[2]}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        candidates.push({ id: m[1], slug: m[2], score: scoreMatch(name.trim(), m[2]) });
+    if (searchHtml) {
+      let m;
+      while ((m = linkRegex.exec(searchHtml)) !== null) {
+        const key = `${m[1]}/${m[2]}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          const score = scoreCandidate(m[2], brandSlug, numbers);
+          if (score > 0) {
+            candidates.push({ id: m[1], slug: m[2], score });
+          }
+        }
+      }
+    }
+
+    // Fallback: If no strict matches found with brand name, try searching full product name
+    if (candidates.length === 0) {
+      searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(productName)}`;
+      searchHtml = await fetchHtml(searchUrl);
+      if (searchHtml) {
+        let m;
+        while ((m = linkRegex.exec(searchHtml)) !== null) {
+          const key = `${m[1]}/${m[2]}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            const score = scoreCandidate(m[2], brandSlug, numbers);
+            if (score > 0) {
+              candidates.push({ id: m[1], slug: m[2], score });
+            }
+          }
+        }
       }
     }
 
     if (candidates.length === 0) {
-      return new Response(JSON.stringify({ success: false, error: 'Medex এ কোনো ফলাফল পাওয়া যায়নি' }), {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Medex এ "${brandName || productName}" এর মিল পাওয়া যায়নি`,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // 3. Sort by best match score
+    // Sort strictly by highest score
     candidates.sort((a, b) => b.score - a.score);
-    console.log(`Found ${candidates.length} candidates. Top: ${candidates[0].slug} (score: ${candidates[0].score})`);
+    console.log(`Found ${candidates.length} valid candidates. Best: ${candidates[0].slug} (score: ${candidates[0].score})`);
 
-    // 4. Check top 3 candidates for pack images
+    // 3. Check candidates for packaging image
     const topCandidates = candidates.slice(0, 3);
-
     for (const c of topCandidates) {
       const drugUrl = `https://medex.com.bd/brands/${c.id}/${c.slug}`;
-      console.log(`Checking drug page: ${drugUrl}`);
-
       const drugHtml = await fetchHtml(drugUrl);
       if (!drugHtml) continue;
 
       const imgMatch = /https:\/\/medex\.com\.bd\/storage\/images\/packaging\/[^"'\s>]+/.exec(drugHtml);
       if (imgMatch) {
+        const medexImageUrl = imgMatch[0];
         const drugName = c.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        console.log(`Found pack image for "${drugName}": ${imgMatch[0]}`);
+        console.log(`Found pack image: ${medexImageUrl}`);
+
+        // 4. Download and upload directly to FileVault
+        let vaultUrl: string | null = null;
+        try {
+          const imgRes = await fetch(medexImageUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+          });
+
+          if (imgRes.ok) {
+            const imgBuffer = await imgRes.arrayBuffer();
+            const imgBytes = new Uint8Array(imgBuffer);
+            const ext = medexImageUrl.split('.').pop()?.split('?')[0] || 'webp';
+            const fileName = `${brandSlug}-${Date.now()}.${ext}`;
+            const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/webp';
+
+            vaultUrl = await uploadToVaultDirect(imgBytes, fileName, mime);
+            console.log(`Uploaded to FileVault: ${vaultUrl}`);
+          }
+        } catch (vaultErr) {
+          console.error("Direct Vault upload failed, returning Medex URL as fallback:", vaultErr);
+        }
 
         return new Response(JSON.stringify({
           success: true,
-          image_url: imgMatch[0],
+          vault_url: vaultUrl,
+          image_url: vaultUrl || medexImageUrl,
           medex_url: drugUrl,
           drug_name: drugName,
         }), {
@@ -161,7 +275,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: false,
-      error: 'Medex এ এই প্রোডাক্টের ছবি পাওয়া যায়নি',
+      error: `Medex এ "${brandName || productName}" এর প্যাকেজ ছবি নেই`,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

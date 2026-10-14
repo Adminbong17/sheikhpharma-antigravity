@@ -458,18 +458,9 @@ const AdminProducts = () => {
         throw error;
       }
 
-      if (data && data.image_url) {
-        toast.loading("ছবি ডাউনলোড ও FileVault এ আপলোড করা হচ্ছে...", { id: toastId });
-        const imgRes = await fetch(data.image_url);
-        if (!imgRes.ok) {
-          throw new Error("Medex থেকে ছবি ডাউনলোড করা যায়নি");
-        }
-        const blob = await imgRes.blob();
-        const ext = data.image_url.split('.').pop()?.split('?')[0] || 'webp';
-        const fileName = `${slugify(form.name)}-medex-${Date.now()}.${ext}`;
-        const vaultUrl = await uploadToVault(blob, fileName);
-
-        setImages(prev => [...prev, vaultUrl]);
+      if (data && (data.vault_url || data.image_url)) {
+        const finalUrl = data.vault_url || data.image_url;
+        setImages(prev => [...prev, finalUrl]);
         const drugLabel = data.drug_name || form.name;
         toast.success(`Medex থেকে ছবি সফলভাবে যুক্ত হয়েছে! (${drugLabel})`, { id: toastId });
       } else {

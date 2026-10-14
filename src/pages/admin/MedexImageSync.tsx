@@ -76,15 +76,16 @@ const MedexImageSync = () => {
 
       if (error) throw error;
 
-      if (data?.success && data?.image_url) {
+      if (data?.success && (data.vault_url || data.image_url)) {
+        const finalUrl = data.vault_url || data.image_url;
         updateItem(product.id, {
           status: "found",
-          medex_image: data.image_url,
+          medex_image: finalUrl,
           drug_name: data.drug_name,
         });
 
         if (autoAccept) {
-          return await saveImage(product.id, product.name, data.image_url);
+          return await saveImage(product.id, product.name, finalUrl);
         }
         return "found";
       } else {
@@ -97,24 +98,34 @@ const MedexImageSync = () => {
     }
   };
 
-  const saveImage = async (productId: string, productName: string, medexUrl: string): Promise<"found" | "error"> => {
+  const saveImage = async (productId: string, productName: string, imageUrl: string): Promise<"found" | "error"> => {
     updateItem(productId, { status: "saving" });
     try {
-      const imgRes = await fetch(medexUrl);
-      if (!imgRes.ok) throw new Error("Download failed");
-      const blob = await imgRes.blob();
-      const ext = medexUrl.split('.').pop()?.split('?')[0] || 'webp';
-      const fileName = `${slugify(productName)}-medex-${Date.now()}.${ext}`;
-      const vaultUrl = await uploadToVault(blob, fileName);
+      let finalUrl = imageUrl;
+
+      // Fallback: If not already on FileVault, attempt upload
+      if (!imageUrl.includes("vault") && !imageUrl.includes("bongbangla")) {
+        try {
+          const imgRes = await fetch(imageUrl);
+          if (imgRes.ok) {
+            const blob = await imgRes.blob();
+            const ext = imageUrl.split('.').pop()?.split('?')[0] || 'webp';
+            const fileName = `${slugify(productName)}-medex-${Date.now()}.${ext}`;
+            finalUrl = await uploadToVault(blob, fileName);
+          }
+        } catch {
+          // If browser CORS prevents client-side fetch, use imageUrl as is
+        }
+      }
 
       const { error } = await supabase
         .from("products")
-        .update({ image_url: vaultUrl })
+        .update({ image_url: finalUrl })
         .eq("id", productId);
 
       if (error) throw error;
 
-      updateItem(productId, { status: "saved", vault_image: vaultUrl });
+      updateItem(productId, { status: "saved", vault_image: finalUrl });
       return "found";
     } catch (err: any) {
       updateItem(productId, { status: "error", error: err.message });
