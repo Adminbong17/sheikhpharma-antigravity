@@ -117,6 +117,7 @@ const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminVendors = lazy(() => import("./pages/admin/AdminVendors"));
 const ProductGrabber = lazy(() => import("./pages/admin/ProductGrabber"));
+const MedexImageSync = lazy(() => import("./pages/admin/MedexImageSync"));
 const AdminCurrencies = lazy(() => import("./pages/admin/AdminCurrencies"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
@@ -289,6 +290,7 @@ const App = () => (
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="vendors" element={<AdminVendors />} />
                       <Route path="grab-product" element={<ProductGrabber />} />
+                      <Route path="medex-image-sync" element={<MedexImageSync />} />
                       <Route path="currencies" element={<AdminCurrencies />} />
                       <Route path="brands" element={<AdminBrands />} />
                       <Route path="activity-log" element={<AdminActivityLog />} />

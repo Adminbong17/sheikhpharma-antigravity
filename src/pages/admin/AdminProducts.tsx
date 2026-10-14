@@ -139,6 +139,7 @@ const AdminProducts = () => {
   const [images, setImages] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
+  const [fetchingMedex, setFetchingMedex] = useState<boolean>(false);
   const [variants, setVariants] = useState<VariantRow[]>([]);
   const [specs, setSpecs] = useState<SpecRow[]>([]);
   const [removingWatermark, setRemovingWatermark] = useState<string | null>(null);
@@ -435,6 +436,50 @@ const AdminProducts = () => {
     } finally {
       setUploadingImage(false);
       e.target.value = "";
+    }
+  };
+
+  // Fetch Medex Image
+  const handleFetchMedexImage = async () => {
+    if (!form.name?.trim()) {
+      toast.error("প্রোডাক্টের নাম লিখুন");
+      return;
+    }
+
+    setFetchingMedex(true);
+    const toastId = toast.loading("Medex এ ছবি খোঁজা হচ্ছে...");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("medex-image-search", {
+        body: { name: form.name.trim() },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.image_url) {
+        toast.loading("ছবি ডাউনলোড ও FileVault এ আপলোড করা হচ্ছে...", { id: toastId });
+        const imgRes = await fetch(data.image_url);
+        if (!imgRes.ok) {
+          throw new Error("Medex থেকে ছবি ডাউনলোড করা যায়নি");
+        }
+        const blob = await imgRes.blob();
+        const ext = data.image_url.split('.').pop()?.split('?')[0] || 'webp';
+        const fileName = `${slugify(form.name)}-medex-${Date.now()}.${ext}`;
+        const vaultUrl = await uploadToVault(blob, fileName);
+
+        setImages(prev => [...prev, vaultUrl]);
+        const drugLabel = data.drug_name || form.name;
+        toast.success(`Medex থেকে ছবি সফলভাবে যুক্ত হয়েছে! (${drugLabel})`, { id: toastId });
+      } else {
+        toast.info("Medex এ এই প্রোডাক্টের ছবি পাওয়া যায়নি", { id: toastId });
+      }
+    } catch (err: any) {
+      console.error("Medex Image Fetch Error:", err);
+      toast.error("Medex থেকে ছবি আনতে ব্যর্থ: " + (err.message || "Unknown error"), { id: toastId });
+    } finally {
+      setFetchingMedex(false);
     }
   };
 
@@ -1070,6 +1115,18 @@ const AdminProducts = () => {
                           disabled={uploadingImage} 
                         />
                       </label>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleFetchMedexImage}
+                        disabled={fetchingMedex || !form.name}
+                        className="text-xs border-emerald-500/50 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 shrink-0"
+                      >
+                        {fetchingMedex ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Search className="h-3.5 w-3.5 mr-1.5" />}
+                        {fetchingMedex ? "Medex এ খুঁজছে..." : "🔍 Medex থেকে ছবি"}
+                      </Button>
 
                       <div className="flex-1 flex gap-2">
                         <Input 

@@ -37,6 +37,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Categories", path: "/admin/categories", icon: FolderTree },
       { title: "Brands", path: "/admin/brands", icon: Tag },
       { title: "Grab Product", path: "/admin/grab-product", icon: Download },
+      { title: "Medex ইমেজ সিঙ্ক", path: "/admin/medex-image-sync", icon: Image },
     ],
   },
   {
