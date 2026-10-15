@@ -229,6 +229,7 @@ const ProductPage = () => {
     ? Math.round((1 - effectivePrice / product.original_price) * 100)
     : 0;
 
+  const productPath = `/product/${product.slug || product.id}`;
   const genericPart = product.generic_name ? ` (${product.generic_name})` : "";
   const brandPart = brand?.name ? ` by ${brand.name}` : "";
   const seoTitle = `${product.name}${genericPart} Price in Bangladesh — দাম ও খাওয়ার নিয়ম | Sheikh Pharma`;
