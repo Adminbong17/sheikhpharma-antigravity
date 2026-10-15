@@ -33,17 +33,33 @@ function extractBrandInfo(productName: string) {
   // 1. Extract strength numbers FIRST (before any stripping)
   const numbers = [...text.matchAll(/\d+(\.\d+)?/g)].map(m => m[0]);
 
-  // 2. Remove complex strength patterns: 500 mg, 0.5 mg+10 mg, 100 IU, 20%, (1 gm+1.3 gm)/50 gm
-  text = text.replace(/\(?\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit)\s*([\+\/]\s*\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit))*\)?(\/\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial|puff))*/gi, ' ');
+  // 2. Extract dosage forms and route of administration for strict matching
+  const requiredForms: string[] = [];
+  const lower = text.toLowerCase();
+  if (/\b(im|intramuscular)\b/i.test(lower)) requiredForms.push('im');
+  if (/\b(iv|intravenous)\b/i.test(lower)) requiredForms.push('iv');
+  if (/\b(sc|subcutaneous)\b/i.test(lower)) requiredForms.push('sc');
+  if (/\b(tablets?|tab)\b/i.test(lower)) requiredForms.push('tablet');
+  if (/\b(capsules?|cap)\b/i.test(lower)) requiredForms.push('capsule');
+  if (/\b(syrups?)\b/i.test(lower)) requiredForms.push('syrup');
+  if (/\b(suspensions?)\b/i.test(lower)) requiredForms.push('suspension');
+  if (/\b(injections?|inj)\b/i.test(lower)) requiredForms.push('injection');
+  if (/\b(infusions?)\b/i.test(lower)) requiredForms.push('infusion');
+  if (/\b(suppositor(y|ies))\b/i.test(lower)) requiredForms.push('suppository');
+  if (/\b(drops?)\b/i.test(lower)) requiredForms.push('drops');
+  if (/\b(gels?)\b/i.test(lower)) requiredForms.push('gel');
+  if (/\b(creams?)\b/i.test(lower)) requiredForms.push('cream');
+  if (/\b(ointments?)\b/i.test(lower)) requiredForms.push('ointment');
 
-  // Remove remaining standalone number+unit combos and bare numbers
+  // 3. Remove complex strength patterns: 500 mg, 0.5 mg+10 mg, 100 IU, 20%, (1 gm+1.3 gm)/50 gm
+  text = text.replace(/\(?\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit)\s*([\+\/]\s*\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit))*\)?(\/\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial|puff))*/gi, ' ');
   text = text.replace(/\b\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial|puff)\b/gi, ' ');
   text = text.replace(/\b\d+(\.\d+)?\b/g, ' ');
 
-  // 3. Convert slashes, commas, plus, brackets to spaces so words like /vial become " vial "
+  // 4. Convert slashes, commas, plus, brackets to spaces so words like /vial become " vial "
   text = text.replace(/[\/\(\)\+,\.]/g, ' ').replace(/\s+/g, ' ');
 
-  // 4. Remove dosage form descriptors using SPACE-BOUNDARY (not \b) to protect
+  // 5. Remove dosage form descriptors using SPACE-BOUNDARY (not \b) to protect
   //    hyphenated brand names like A-Gel, A-Cal, A-Pect, A-Ket etc.
   const forms = [
     'chewable tablets?', 'dispersible tablets?', 'orally disintegrating tablets?',
@@ -76,11 +92,11 @@ function extractBrandInfo(productName: string) {
     .replace(/-+/g, '-')
     .trim();
 
-  return { brandName: text, brandSlug, numbers };
+  return { brandName: text, brandSlug, numbers, requiredForms };
 }
 
-// Strict score candidate against the brand — REJECTS wrong power/strength
-function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: string[]): number {
+// Strict score candidate against the brand — REJECTS wrong power and wrong dosage form / route
+function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: string[], requiredForms: string[] = []): number {
   const norm = candidateSlug.toLowerCase();
   // Candidate MUST start with the brand slug (e.g. a-cal-d-500-mg-tablet starts with a-cal-d-)
   const isMatch = norm === brandSlug || norm.startsWith(brandSlug + '-');
@@ -88,16 +104,38 @@ function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: strin
     return -1; // REJECT — wrong brand
   }
 
-  // STRICT POWER MATCH: extract numbers from the candidate slug
+  // 1. STRICT POWER MATCH: extract numbers from the candidate slug
   const candidateNumbers = [...norm.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => m[0]);
-
-  // Reject if candidate contains ANY number NOT present in the product's numbers
-  // e.g. product is "Maxpro 40 mg" (numbers=["40"]), candidate "maxpro-20-mg-tablet"
-  //      has "20" which is NOT in ["40"] → REJECT (wrong strength!)
   for (const cn of candidateNumbers) {
     if (!numbers.includes(cn)) {
       return -1; // REJECT — different strength/power
     }
+  }
+
+  // 2. STRICT ROUTE MATCH (IM vs IV)
+  // IM injection must never get IV injection picture and vice-versa
+  if (requiredForms.includes('im') && (norm.includes('-iv-') || norm.includes('iv-injection') || norm.includes('iv-infusion'))) {
+    return -1; // REJECT — requested IM but candidate is IV
+  }
+  if (requiredForms.includes('iv') && (norm.includes('-im-') || norm.includes('im-injection'))) {
+    return -1; // REJECT — requested IV but candidate is IM
+  }
+
+  // 3. STRICT FORM MATCH (Tablet vs Capsule vs Syrup vs Suppository)
+  if (requiredForms.includes('tablet') && (norm.includes('capsule') || norm.includes('syrup') || norm.includes('suppository'))) {
+    return -1; // REJECT — requested tablet but candidate is capsule/syrup/suppository
+  }
+  if (requiredForms.includes('capsule') && (norm.includes('tablet') || norm.includes('syrup') || norm.includes('suppository'))) {
+    return -1; // REJECT — requested capsule but candidate is tablet/syrup/suppository
+  }
+  if (requiredForms.includes('syrup') && (norm.includes('suspension') || norm.includes('tablet'))) {
+    return -1; // REJECT — requested syrup but candidate is suspension/tablet
+  }
+  if (requiredForms.includes('suspension') && (norm.includes('syrup') || norm.includes('tablet'))) {
+    return -1; // REJECT — requested suspension but candidate is syrup/tablet
+  }
+  if (requiredForms.includes('suppository') && (norm.includes('tablet') || norm.includes('capsule') || norm.includes('syrup'))) {
+    return -1; // REJECT — requested suppository but candidate is tablet/capsule
   }
 
   let score = 100;
@@ -105,6 +143,12 @@ function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: strin
   for (const num of numbers) {
     if (norm.includes('-' + num + '-') || norm.endsWith('-' + num)) {
       score += 30;
+    }
+  }
+  // Bonus for each matching dosage form found in the slug
+  for (const f of requiredForms) {
+    if (norm.includes(f)) {
+      score += 50;
     }
   }
   return score;
@@ -238,8 +282,8 @@ Deno.serve(async (req) => {
     }
 
     const productName = name.trim();
-    const { brandName, brandSlug, numbers } = extractBrandInfo(productName);
-    console.log(`Product: "${productName}" => Brand: "${brandName}" (slug: "${brandSlug}"), Numbers:`, numbers);
+    const { brandName, brandSlug, numbers, requiredForms } = extractBrandInfo(productName);
+    console.log(`Product: "${productName}" => Brand: "${brandName}" (slug: "${brandSlug}"), Numbers:`, numbers, "Forms:", requiredForms);
 
     // Helper: extract candidates from HTML
     const linkRegex = /\/brands\/(\d+)\/([a-z0-9-]+)/g;
@@ -253,22 +297,12 @@ Deno.serve(async (req) => {
         const key = `${m[1]}/${m[2]}`;
         if (!seen.has(key)) {
           seen.add(key);
-          const score = scoreCandidate(m[2], brandSlug, numbers);
+          const score = scoreCandidate(m[2], brandSlug, numbers, requiredForms);
           if (score > 0) {
             candidates.push({ id: m[1], slug: m[2], score });
           }
         }
       }
-    }
-
-    // Helper: try to grab a packaging image matching our brand from search page HTML
-    function grabSearchPageImage(html: string): string | null {
-      const imgRegex = new RegExp(
-        `https://medex\\.com\\.bd/storage/images/packaging/${brandSlug.replace(/-/g, '[-]?')}[^"'\\s>]+`,
-        'i'
-      );
-      const match = imgRegex.exec(html);
-      return match ? match[0] : null;
     }
 
     // ── SEARCH STRATEGY ──────────────────────────────────────────
@@ -278,29 +312,6 @@ Deno.serve(async (req) => {
     let searchHtml = await fetchHtml(searchUrl);
 
     if (searchHtml) {
-      // Quick-grab: check if the search results page itself has a matching packaging image
-      const quickImg = grabSearchPageImage(searchHtml);
-      if (quickImg) {
-        console.log(`Quick-grab from search page: ${quickImg}`);
-        // Still need to find the matching brand URL for metadata
-        extractCandidates(searchHtml);
-        const bestCandidate = candidates.length > 0 ? candidates.sort((a, b) => b.score - a.score)[0] : null;
-        const drugUrl = bestCandidate ? `https://medex.com.bd/brands/${bestCandidate.id}/${bestCandidate.slug}` : searchUrl;
-        const drugName = bestCandidate ? bestCandidate.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : brandName;
-
-        // Download & upload to FileVault
-        const result = await downloadAndUpload(quickImg, brandSlug);
-        return new Response(JSON.stringify({
-          success: true,
-          vault_url: result.vaultUrl,
-          image_url: result.vaultUrl || quickImg,
-          medex_url: drugUrl,
-          drug_name: drugName,
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
       extractCandidates(searchHtml);
     }
 
