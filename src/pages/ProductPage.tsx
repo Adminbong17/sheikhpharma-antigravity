@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { ShoppingCart, Star, ChevronRight, Minus, Plus, Zap, Store, MessageCircle, BadgeCheck, Truck, ShieldCheck, RotateCcw, FlaskConical } from "lucide-react";
+import { ShoppingCart, Star, ChevronRight, Minus, Plus, Zap, Store, MessageCircle, BadgeCheck, Truck, ShieldCheck, RotateCcw, FlaskConical, HelpCircle } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import WishlistButton from "@/components/WishlistButton";
 import RelatedProducts from "@/components/RelatedProducts";
@@ -229,14 +229,15 @@ const ProductPage = () => {
     ? Math.round((1 - effectivePrice / product.original_price) * 100)
     : 0;
 
-  const productPath = `/product/${product.slug || product.id}`;
-  // Bangladeshi shoppers search both "<brand> price in bangladesh" and "<brand> দাম"
-  const seoTitle = `${product.name}${product.generic_name ? ` | ${product.generic_name}` : ""} — দাম ও Price in Bangladesh`.slice(0, 65) + " | Sheikh Pharma";
+  const genericPart = product.generic_name ? ` (${product.generic_name})` : "";
+  const brandPart = brand?.name ? ` by ${brand.name}` : "";
+  const seoTitle = `${product.name}${genericPart} Price in Bangladesh — দাম ও খাওয়ার নিয়ম | Sheikh Pharma`;
+  const cleanDesc = product.description?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const seoDescription = (
-    product.description?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() ||
-    `${product.name}${product.generic_name ? ` (${product.generic_name})` : ""} price ৳${effectivePrice} in Bangladesh. ${product.name} এর দাম, ব্যবহার ও ডেলিভারি — Sheikh Pharma থেকে অনলাইনে অর্ডার করুন।`
-  ).slice(0, 155);
-
+    cleanDesc && cleanDesc.length > 50
+      ? cleanDesc.slice(0, 160)
+      : `${product.name}${genericPart}${brandPart}। বর্তমান খুচরা মূল্য ৳${effectivePrice}। এই ওষুধের ব্যবহার, খাওয়ার নিয়ম, মাত্রা ও পার্শ্বপ্রতিক্রিয়া জেনে অর্ডার করুন — Sheikh Pharma তে ১০০% আসল ওষুধের দ্রুত হোম ডেলিভারি।`
+  ).slice(0, 160);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -278,9 +279,61 @@ const ProductPage = () => {
                 product.stock > 0 || isEffectivePreorder(product)
                   ? "https://schema.org/InStock"
                   : "https://schema.org/OutOfStock",
-              seller: { "@type": "Organization", name: "Sheikh Pharma" },
+              seller: { "@type": "Pharmacy", name: "Sheikh Pharma" },
               areaServed: { "@type": "Country", name: "Bangladesh" },
             },
+          },
+
+          {
+            "@context": "https://schema.org",
+            "@type": "MedicalWebPage",
+            name: `${product.name} Information & Online Order`,
+            description: seoDescription,
+            url: `${SITE_URL}${productPath}`,
+            aspect: ["Overview", "Indications", "Dosage", "Pricing"],
+          },
+
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: `${product.name} এর মূল জেনেরিক উপাদান কী?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: product.generic_name
+                    ? `${product.name} এর মূল উপাদান হলো ${product.generic_name}।`
+                    : `${product.name} একটি রেজিস্টার্ড ব্র্যান্ডের ওষুধ।`,
+                },
+              },
+              {
+                "@type": "Question",
+                name: `${product.name} কোন ফার্মাসিউটিক্যাল কোম্পানি তৈরি করে?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: brand?.name
+                    ? `${product.name} এর প্রস্তুতকারক কোম্পানি হলো ${brand.name}।`
+                    : "এটি বাংলাদেশের মানসম্মত ও রেজিস্টার্ড ওষুধ প্রস্তুতকারক কোম্পানি দ্বারা উৎপাদিত।",
+                },
+              },
+              {
+                "@type": "Question",
+                name: `${product.name} এর বর্তমান দাম কত?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: `${product.name} এর বর্তমান খুচরা মূল্য ৳${effectivePrice} ${(product as any).price_unit ? `(${(product as any).price_unit})` : ""}। Sheikh Pharma থেকে অনলাইনে অর্ডার করলে বিশেষ ছাড় ও ক্যাশ অন ডেলিভারি সুবিধা পাওয়া যায়।`,
+                },
+              },
+              {
+                "@type": "Question",
+                name: `Sheikh Pharma থেকে ${product.name} কীভাবে অনলাইনে অর্ডার করব?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Sheikh Pharma ওয়েবসাইটে সরাসরি কার্টে যোগ করে অথবা প্রেসক্রিপশন আপলোড করে ক্যাশ অন ডেলিভারিতে বাংলাদেশের যেকোনো প্রান্ত থেকে ঘরে বসে অর্ডার করতে পারেন।",
+                },
+              },
+            ],
           },
 
           {
@@ -808,6 +861,52 @@ const ProductPage = () => {
 
           </div>
         </div>
+
+        {/* Medicine Information & SEO FAQ Section */}
+        <section aria-labelledby="faq-heading" className="mt-8 rounded-xl border bg-card p-5 sm:p-6 shadow-sm">
+          <h2 id="faq-heading" className="text-lg sm:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-primary" />
+            {product.name} সম্পর্কিত সাধারণ প্রশ্নোত্তর (FAQ)
+          </h2>
+          <div className="divide-y divide-border/60">
+            <div className="py-3">
+              <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                ১. {product.name} এর মূল জেনেরিক উপাদান কী?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {product.generic_name
+                  ? `${product.name} এর মূল উপাদান বা জেনেরিক হলো ${product.generic_name}। এই ওষুধটি মূলত রেজিস্টার্ড চিকিৎসকের নির্দেশনা অনুযায়ী গ্রহণ করা উচিত।`
+                  : `${product.name} একটি রেজিস্টার্ড ব্র্যান্ডের ওষুধ।`}
+              </p>
+            </div>
+            <div className="py-3">
+              <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                ২. {product.name} কোন কোম্পানি প্রস্তুত করেছে?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {brand?.name
+                  ? `${product.name} এর প্রস্তুতকারক কোম্পানি হলো ${brand.name}। এটি বাংলাদেশের অন্যতম শীর্ষস্থানীয় ফার্মাসিউটিক্যালস কোম্পানি দ্বারা প্রস্তুতকৃত।`
+                  : "এটি বাংলাদেশের মানসম্মত ও অনুমোদিত ওষুধ প্রস্তুতকারক কোম্পানি দ্বারা উৎপাদিত।"}
+              </p>
+            </div>
+            <div className="py-3">
+              <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                ৩. {product.name} এর বর্তমান খুচরা মূল্য কত?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {product.name} এর বর্তমান বিক্রয় মূল্য {formatPrice(effectivePrice)} {(product as any).price_unit ? `(${(product as any).price_unit})` : ""}। Sheikh Pharma থেকে অনলাইনে অর্ডার করলে নিয়মিত বিশেষ ছাড় ও ক্যাশ অন ডেলিভারি সুবিধা পাওয়া যায়।
+              </p>
+            </div>
+            <div className="py-3">
+              <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                ৪. Sheikh Pharma থেকে কীভাবে {product.name} অনলাইনে অর্ডার করবেন?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                সরাসরি ওয়েবসাইটে "কার্টে যোগ করুন" বাটনে ক্লিক করে অথবা আপনার প্রেসক্রিপশনের ছবি আপলোড করে খুব সহজেই অর্ডার করতে পারেন। সারা বাংলাদেশে দ্রুত হোম ডেলিভারির সুবিধা রয়েছে।
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* Reviews Section */}
         <div className="mt-8 border-t pt-6">

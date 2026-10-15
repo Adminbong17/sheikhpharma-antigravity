@@ -19,17 +19,18 @@ function existingSitemapUrlCount(): number {
 
 const BASE_URL = "https://www.sheikhpharma.shop";
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://vkfloynvxqkxbqpdlzbd.supabase.co";
+const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrZmxveW52eHFreGJxcGRsemJkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzQ0NzMyNSwiZXhwIjoyMDg5MDIzMzI1fQ.KGfBZMEqiEykX6emQp-pOqZTaZfnjQXBzfsrEUTsQK4";
 
 interface SitemapEntry {
   path: string;
   changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
   priority?: string;
+  lastmod?: string;
 }
 
 const staticEntries: SitemapEntry[] = [
-  { path: "/", changefreq: "daily", priority: "1.0" },
+  { path: "/", changefreq: "daily", priority: "1.0", lastmod: new Date().toISOString().slice(0, 10) },
   { path: "/categories", changefreq: "weekly", priority: "0.8" },
   { path: "/brands", changefreq: "weekly", priority: "0.7" },
   { path: "/vendors", changefreq: "weekly", priority: "0.5" },
@@ -71,6 +72,7 @@ function generateSitemap(entries: SitemapEntry[]) {
     [
       `  <url>`,
       `    <loc>${xmlEscape(BASE_URL + e.path)}</loc>`,
+      e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
       e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
       e.priority ? `    <priority>${e.priority}</priority>` : null,
       `  </url>`,
@@ -91,7 +93,7 @@ async function main() {
   const entries = [...staticEntries];
 
   const [products, categories, brands, pages] = await Promise.all([
-    fetchAll("products", "id,slug", "&is_active=eq.true"),
+    fetchAll("products", "id,slug,updated_at", "&is_active=eq.true"),
     fetchAll("categories", "slug"),
     fetchAll("brands", "id"),
     fetchAll("static_pages", "slug", "&is_active=eq.true"),
@@ -103,16 +105,32 @@ async function main() {
     return;
   }
 
-  for (const c of categories) if (c.slug) entries.push({ path: `/category/${c.slug}`, changefreq: "weekly", priority: "0.8" });
+  for (const c of categories) {
+    if (c.slug) entries.push({ path: `/category/${c.slug}`, changefreq: "weekly", priority: "0.8" });
+  }
+
   for (const p of products) {
     const key = p.slug || p.id;
-    if (key) entries.push({ path: `/product/${encodeURIComponent(key)}`, changefreq: "weekly", priority: "0.9" });
+    if (key) {
+      entries.push({
+        path: `/product/${encodeURIComponent(key)}`,
+        changefreq: "weekly",
+        priority: "0.9",
+        lastmod: p.updated_at ? p.updated_at.slice(0, 10) : undefined,
+      });
+    }
   }
-  for (const b of brands) if (b.id) entries.push({ path: `/brand/${b.id}`, changefreq: "monthly", priority: "0.5" });
-  for (const s of pages) if (s.slug) entries.push({ path: `/page/${s.slug}`, changefreq: "monthly", priority: "0.3" });
+
+  for (const b of brands) {
+    if (b.id) entries.push({ path: `/brand/${b.id}`, changefreq: "monthly", priority: "0.6" });
+  }
+
+  for (const s of pages) {
+    if (s.slug) entries.push({ path: `/page/${s.slug}`, changefreq: "monthly", priority: "0.4" });
+  }
 
   writeFileSync(SITEMAP_PATH, generateSitemap(entries));
-  console.log(`sitemap.xml written (${entries.length} entries)`);
+  console.log(`sitemap.xml written (${entries.length} entries with lastmod)`);
 }
 
 main().catch((err) => {
