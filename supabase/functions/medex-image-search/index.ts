@@ -28,37 +28,82 @@ async function fetchHtml(url: string): Promise<string | null> {
 
 // Extract the clean brand name and strength numbers from a product title
 function extractBrandInfo(productName: string) {
-  // Strip strengths like: 500 mg, 0.5 mg+10 mg, 100 IU, 20%, (1 gm+1.3 gm)/50 gm
-  let clean = productName.replace(/\(?\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit)\s*([\+\/]\s*\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit))*\)?(\/\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial))*/gi, '');
-  // Strip dosage form keywords
-  clean = clean.replace(/\b(tablets?|capsules?|syrups?|suspensions?|injections?|drops?|topical|gels?|creams?|ointments?|oral solutions?|iv infusions?|suppository|suppositories|inhalers?|effervescent|shampoo|lotion|spray)\b/gi, '');
-  clean = clean.replace(/[\/\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+  let text = productName.trim();
 
-  const brandSlug = clean
+  // 1. Extract strength numbers FIRST (before any stripping)
+  const numbers = [...text.matchAll(/\d+(\.\d+)?/g)].map(m => m[0]);
+
+  // 2. Remove complex strength patterns: 500 mg, 0.5 mg+10 mg, 100 IU, 20%, (1 gm+1.3 gm)/50 gm
+  text = text.replace(/\(?\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit)\s*([\+\/]\s*\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit))*\)?(\/\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial|puff))*/gi, ' ');
+
+  // Remove remaining standalone number+unit combos and bare numbers
+  text = text.replace(/\b\d+(\.\d+)?\s*(mg|mcg|gm|g|ml|iu|%|unit|vial|puff)\b/gi, ' ');
+  text = text.replace(/\b\d+(\.\d+)?\b/g, ' ');
+
+  // 3. Convert slashes, commas, plus, brackets to spaces so words like /vial become " vial "
+  text = text.replace(/[\/\(\)\+,\.]/g, ' ').replace(/\s+/g, ' ');
+
+  // 4. Remove dosage form descriptors using SPACE-BOUNDARY (not \b) to protect
+  //    hyphenated brand names like A-Gel, A-Cal, A-Pect, A-Ket etc.
+  const forms = [
+    'chewable tablets?', 'dispersible tablets?', 'orally disintegrating tablets?',
+    'effervescent tablets?', 'extended release tablets?', 'sustained release tablets?',
+    'film coated tablets?', 'ec tablets?', 'mups tablets?',
+    'tablets?', 'capsules?', 'syrups?', 'suspensions?', 'injections?',
+    'paediatric drops?', 'pediatric drops?', 'eye drops?', 'ear drops?', 'nasal drops?',
+    'drops?', 'topical gels?', 'oral gels?', 'gels?', 'creams?', 'ointments?',
+    'oral solutions?', 'iv infusions?', 'infusions?', 'ophthalmic suspensions?',
+    'suppositories', 'suppository', 'inhalers?', 'rotacaps?', 'respcaps?',
+    'shampoo', 'lotions?', 'sprays?', 'mouthwash', 'solutions?', 'elixir',
+    'emulsions?', 'powders?', 'granules?', 'patch', 'condom',
+    'chewable', 'dispersible', 'effervescent', 'topical', 'ophthalmic', 'oral',
+    'sr', 'xr', 'cr', 'tr', 'dr', 'er', 'mr', 'ec', 'mups',
+    'im', 'iv', 'sc', 'vial', 'puff',
+  ];
+
+  for (const f of forms) {
+    // Use space/start/end as boundary — never \b which treats hyphens as boundary
+    const rx = new RegExp(`(\\s+|^)${f}(\\s+|$)`, 'gi');
+    text = text.replace(rx, ' ');
+  }
+
+  text = text.replace(/\s+/g, ' ').trim();
+
+  const brandSlug = text
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
 
-  // Extract strength numbers for precise dosage matching
-  const numbers = [...productName.matchAll(/\d+(\.\d+)?/g)].map(m => m[0]);
-
-  return { brandName: clean, brandSlug, numbers };
+  return { brandName: text, brandSlug, numbers };
 }
 
-// Strict score candidate against the brand
+// Strict score candidate against the brand — REJECTS wrong power/strength
 function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: string[]): number {
   const norm = candidateSlug.toLowerCase();
   // Candidate MUST start with the brand slug (e.g. a-cal-d-500-mg-tablet starts with a-cal-d-)
   const isMatch = norm === brandSlug || norm.startsWith(brandSlug + '-');
   if (!isMatch) {
-    return -1; // REJECT
+    return -1; // REJECT — wrong brand
+  }
+
+  // STRICT POWER MATCH: extract numbers from the candidate slug
+  const candidateNumbers = [...norm.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => m[0]);
+
+  // Reject if candidate contains ANY number NOT present in the product's numbers
+  // e.g. product is "Maxpro 40 mg" (numbers=["40"]), candidate "maxpro-20-mg-tablet"
+  //      has "20" which is NOT in ["40"] → REJECT (wrong strength!)
+  for (const cn of candidateNumbers) {
+    if (!numbers.includes(cn)) {
+      return -1; // REJECT — different strength/power
+    }
   }
 
   let score = 100;
+  // Bonus for each matching strength number found in the slug
   for (const num of numbers) {
-    if (norm.includes('-' + num + '-') || norm.includes('-' + num)) {
+    if (norm.includes('-' + num + '-') || norm.endsWith('-' + num)) {
       score += 30;
     }
   }
@@ -110,6 +155,30 @@ async function uploadToVaultDirect(imgBytes: Uint8Array, fileName: string, mime:
   }
 
   return `${VAULT_API_URL}/share.php?t=${shareToken}`;
+}
+
+// Download an image from a URL and upload it to FileVault
+async function downloadAndUpload(imageUrl: string, brandSlug: string): Promise<{ vaultUrl: string | null }> {
+  let vaultUrl: string | null = null;
+  try {
+    const imgRes = await fetch(imageUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+    });
+
+    if (imgRes.ok) {
+      const imgBuffer = await imgRes.arrayBuffer();
+      const imgBytes = new Uint8Array(imgBuffer);
+      const ext = imageUrl.split('.').pop()?.split('?')[0] || 'webp';
+      const fileName = `${brandSlug}-${Date.now()}.${ext}`;
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/webp';
+
+      vaultUrl = await uploadToVaultDirect(imgBytes, fileName, mime);
+      console.log(`Uploaded to FileVault: ${vaultUrl}`);
+    }
+  } catch (vaultErr) {
+    console.error("Direct Vault upload failed, returning original URL as fallback:", vaultErr);
+  }
+  return { vaultUrl };
 }
 
 Deno.serve(async (req) => {
@@ -172,18 +241,15 @@ Deno.serve(async (req) => {
     const { brandName, brandSlug, numbers } = extractBrandInfo(productName);
     console.log(`Product: "${productName}" => Brand: "${brandName}" (slug: "${brandSlug}"), Numbers:`, numbers);
 
-    // 1. Search Medex with clean Brand Name first
-    let searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(brandName || productName)}`;
-    let searchHtml = await fetchHtml(searchUrl);
-
-    // 2. Extract drug page links /brands/{id}/{slug}
+    // Helper: extract candidates from HTML
     const linkRegex = /\/brands\/(\d+)\/([a-z0-9-]+)/g;
     const seen = new Set<string>();
     let candidates: { id: string; slug: string; score: number }[] = [];
 
-    if (searchHtml) {
+    function extractCandidates(html: string) {
       let m;
-      while ((m = linkRegex.exec(searchHtml)) !== null) {
+      const rx = new RegExp(linkRegex.source, 'g');
+      while ((m = rx.exec(html)) !== null) {
         const key = `${m[1]}/${m[2]}`;
         if (!seen.has(key)) {
           seen.add(key);
@@ -195,21 +261,66 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fallback: If no strict matches found with brand name, try searching full product name
+    // Helper: try to grab a packaging image matching our brand from search page HTML
+    function grabSearchPageImage(html: string): string | null {
+      const imgRegex = new RegExp(
+        `https://medex\\.com\\.bd/storage/images/packaging/${brandSlug.replace(/-/g, '[-]?')}[^"'\\s>]+`,
+        'i'
+      );
+      const match = imgRegex.exec(html);
+      return match ? match[0] : null;
+    }
+
+    // ── SEARCH STRATEGY ──────────────────────────────────────────
+
+    // 1. Search Medex with clean Brand Name
+    let searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(brandName || productName)}`;
+    let searchHtml = await fetchHtml(searchUrl);
+
+    if (searchHtml) {
+      // Quick-grab: check if the search results page itself has a matching packaging image
+      const quickImg = grabSearchPageImage(searchHtml);
+      if (quickImg) {
+        console.log(`Quick-grab from search page: ${quickImg}`);
+        // Still need to find the matching brand URL for metadata
+        extractCandidates(searchHtml);
+        const bestCandidate = candidates.length > 0 ? candidates.sort((a, b) => b.score - a.score)[0] : null;
+        const drugUrl = bestCandidate ? `https://medex.com.bd/brands/${bestCandidate.id}/${bestCandidate.slug}` : searchUrl;
+        const drugName = bestCandidate ? bestCandidate.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : brandName;
+
+        // Download & upload to FileVault
+        const result = await downloadAndUpload(quickImg, brandSlug);
+        return new Response(JSON.stringify({
+          success: true,
+          vault_url: result.vaultUrl,
+          image_url: result.vaultUrl || quickImg,
+          medex_url: drugUrl,
+          drug_name: drugName,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      extractCandidates(searchHtml);
+    }
+
+    // 2. Fallback: search with full product name if no candidates yet
     if (candidates.length === 0) {
       searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(productName)}`;
       searchHtml = await fetchHtml(searchUrl);
       if (searchHtml) {
-        let m;
-        while ((m = linkRegex.exec(searchHtml)) !== null) {
-          const key = `${m[1]}/${m[2]}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            const score = scoreCandidate(m[2], brandSlug, numbers);
-            if (score > 0) {
-              candidates.push({ id: m[1], slug: m[2], score });
-            }
-          }
+        extractCandidates(searchHtml);
+      }
+    }
+
+    // 3. Fallback: search with just the primary brand word(s) (first 1-2 words)
+    if (candidates.length === 0 && brandName) {
+      const primaryWord = brandName.split(/\s+/).slice(0, 1).join(' ');
+      if (primaryWord && primaryWord !== brandName) {
+        searchUrl = `https://medex.com.bd/search?search=${encodeURIComponent(primaryWord)}`;
+        searchHtml = await fetchHtml(searchUrl);
+        if (searchHtml) {
+          extractCandidates(searchHtml);
         }
       }
     }
@@ -217,7 +328,7 @@ Deno.serve(async (req) => {
     if (candidates.length === 0) {
       return new Response(JSON.stringify({
         success: false,
-        error: `Medex এ "${brandName || productName}" এর মিল পাওয়া যায়নি`,
+        error: `Medex এ "${brandName || productName}" এর মিল পাওয়া যায়নি`,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -227,8 +338,8 @@ Deno.serve(async (req) => {
     candidates.sort((a, b) => b.score - a.score);
     console.log(`Found ${candidates.length} valid candidates. Best: ${candidates[0].slug} (score: ${candidates[0].score})`);
 
-    // 3. Check candidates for packaging image
-    const topCandidates = candidates.slice(0, 3);
+    // 4. Check up to 10 candidates for packaging image (not just 3!)
+    const topCandidates = candidates.slice(0, 10);
     for (const c of topCandidates) {
       const drugUrl = `https://medex.com.bd/brands/${c.id}/${c.slug}`;
       const drugHtml = await fetchHtml(drugUrl);
@@ -238,33 +349,14 @@ Deno.serve(async (req) => {
       if (imgMatch) {
         const medexImageUrl = imgMatch[0];
         const drugName = c.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        console.log(`Found pack image: ${medexImageUrl}`);
+        console.log(`Found pack image on candidate ${c.slug}: ${medexImageUrl}`);
 
-        // 4. Download and upload directly to FileVault
-        let vaultUrl: string | null = null;
-        try {
-          const imgRes = await fetch(medexImageUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-          });
-
-          if (imgRes.ok) {
-            const imgBuffer = await imgRes.arrayBuffer();
-            const imgBytes = new Uint8Array(imgBuffer);
-            const ext = medexImageUrl.split('.').pop()?.split('?')[0] || 'webp';
-            const fileName = `${brandSlug}-${Date.now()}.${ext}`;
-            const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/webp';
-
-            vaultUrl = await uploadToVaultDirect(imgBytes, fileName, mime);
-            console.log(`Uploaded to FileVault: ${vaultUrl}`);
-          }
-        } catch (vaultErr) {
-          console.error("Direct Vault upload failed, returning Medex URL as fallback:", vaultErr);
-        }
-
+        // Download and upload to FileVault
+        const result = await downloadAndUpload(medexImageUrl, brandSlug);
         return new Response(JSON.stringify({
           success: true,
-          vault_url: vaultUrl,
-          image_url: vaultUrl || medexImageUrl,
+          vault_url: result.vaultUrl,
+          image_url: result.vaultUrl || medexImageUrl,
           medex_url: drugUrl,
           drug_name: drugName,
         }), {
