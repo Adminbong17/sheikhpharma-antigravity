@@ -6,13 +6,13 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(googlebot|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|rogerbot|linkedinbot|embedly|quora|outbrain|pinterest|slackbot|vkshare|w3c_validator|whatsapp|duckduckbot).*"
+          "value": ".*([Gg]ooglebot|[Bb]ingbot|[Yy]andex|[Bb]aiduspider|[Tt]witterbot|facebookexternalhit|rogerbot|linkedinbot|embedly|quora|outbrain|pinterest|slackbot|vkshare|w3c_validator|whatsapp|duckduckbot).*"
         }
       ],
       "destination": "/api/seo?slug=:slug"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

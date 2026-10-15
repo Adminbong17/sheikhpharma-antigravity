@@ -19,6 +19,7 @@ function escapeHtml(str: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("X-Rendered-By", "SheikhPharma-SEO-Engine");
   const slug = (req.query.slug as string) || "";
 
   if (!slug) {
