@@ -15,11 +15,14 @@ const HeroBanner = () => {
   const { data: slides = [], isLoading } = useQuery({
     queryKey: ["hero-slides"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("hero_slides")
-        .select("id, image_url, link_url, title, description, button_text, sort_order")
+        .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      if (error) {
+        console.error("Error fetching hero slides:", error);
+      }
       return data || [];
     },
     staleTime: 1000 * 60 * 30,
