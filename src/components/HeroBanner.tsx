@@ -17,11 +17,12 @@ const HeroBanner = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("hero_slides")
-        .select("*")
+        .select("id, image_url, link_url, title, description, button_text, sort_order")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       return data || [];
     },
+    staleTime: 1000 * 60 * 30,
   });
 
   const next = useCallback(() => {

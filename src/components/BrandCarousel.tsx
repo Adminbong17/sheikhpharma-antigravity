@@ -19,13 +19,16 @@ const BrandCarousel = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("*")
+        .select("id, name, logo_url")
         .eq("status", "approved")
         .eq("is_active", true)
-        .order("name");
+        .not("logo_url", "is", null)
+        .order("name")
+        .limit(24);
       if (error) throw error;
       return (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
     },
+    staleTime: 1000 * 60 * 30,
   });
 
   if (brands.length === 0) return null;

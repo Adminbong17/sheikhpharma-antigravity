@@ -52,10 +52,25 @@ export const fetchPrayerTimings = async (
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();
+  const cacheKey = `prayer_${lat.toFixed(2)}_${lng.toFixed(2)}_${dd}-${mm}-${yyyy}`;
+
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as AlAdhanResponse;
+    }
+  } catch {}
+
   const url = `https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lng}&method=${method}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to load prayer times");
-  return (await res.json()) as AlAdhanResponse;
+  const data = (await res.json()) as AlAdhanResponse;
+
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+  } catch {}
+
+  return data;
 };
 
 export const formatTime12h = (t: string) => {

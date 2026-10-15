@@ -25,6 +25,7 @@ const TopVendors = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 1000 * 60 * 30,
   });
 
   if (vendors.length === 0) return null;

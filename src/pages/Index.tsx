@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles, FileText, Stethoscope, Droplets, Siren } from "lucide-react";
 import Seo, { SITE_URL } from "@/components/Seo";
@@ -6,14 +6,16 @@ import Navbar from "@/components/Navbar";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryGrid from "@/components/CategoryGrid";
 import HomepageLeftMenu from "@/components/HomepageLeftMenu";
-import BrandCarousel from "@/components/BrandCarousel";
-import PrayerTimesWidget from "@/components/PrayerTimesWidget";
-import TopVendors from "@/components/TopVendors";
 import HomepageSections from "@/components/HomepageSections";
 import FlashDealBanner from "@/components/FlashDealBanner";
 import Footer from "@/components/Footer";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// Lazy-load below-the-fold components to reduce initial JavaScript payload
+const BrandCarousel = lazy(() => import("@/components/BrandCarousel"));
+const PrayerTimesWidget = lazy(() => import("@/components/PrayerTimesWidget"));
+const TopVendors = lazy(() => import("@/components/TopVendors"));
 
 const Index = () => {
   const { data: siteSettings } = useSiteSettings();
@@ -119,9 +121,11 @@ const Index = () => {
         <FlashDealBanner />
         <HomepageSections />
         
-        <TopVendors />
-        <PrayerTimesWidget />
-        <BrandCarousel />
+        <Suspense fallback={null}>
+          <TopVendors />
+          <PrayerTimesWidget />
+          <BrandCarousel />
+        </Suspense>
       </main>
       <Footer />
     </div>

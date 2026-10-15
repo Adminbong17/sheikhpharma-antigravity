@@ -16,8 +16,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import PageLoading from "@/components/PageLoading";
 
-// Core homepage imported directly for instantaneous first paint
-import Index from "./pages/Index";
+// Public Storefront Pages (Lazy-loaded for maximum performance)
+const Index = lazy(() => import("./pages/Index"));
 
 // Lazy-loaded layouts
 const AdminLayout = lazy(() => import("@/components/AdminLayout"));

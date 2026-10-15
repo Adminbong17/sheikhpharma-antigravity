@@ -30,11 +30,12 @@ const HomepageSections = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("homepage_sections")
-        .select("*")
+        .select("id, title, section_type, sort_order, is_active")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       return data || [];
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: sectionProducts = {} } = useQuery({
@@ -43,7 +44,7 @@ const HomepageSections = () => {
       const { data, error } = await supabase
         .from("homepage_section_products")
         .select(
-          "*, products(id, name, slug, image_url, price, price_unit, original_price, rating, sold_count, is_qmall_verified, stock, is_preorder, preorder_count)"
+          "section_id, product_id, sort_order, products(id, name, slug, image_url, price, price_unit, original_price, rating, sold_count, is_qmall_verified, stock, is_preorder, preorder_count)"
         )
         .order("sort_order", { ascending: true });
       const grouped: Record<string, any[]> = {};
@@ -55,6 +56,7 @@ const HomepageSections = () => {
       });
       return grouped;
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: sectionBanners = {} } = useQuery({
@@ -62,7 +64,7 @@ const HomepageSections = () => {
     queryFn: async () => {
       const { data } = await (supabase
         .from("section_banners" as any)
-        .select("*")
+        .select("id, image_url, link_url, after_section_id, is_active")
         .eq("is_active", true) as any);
       const grouped: Record<string, any[]> = {};
       (data || []).forEach((b: any) => {
@@ -71,6 +73,7 @@ const HomepageSections = () => {
       });
       return grouped;
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   if (isLoading) {

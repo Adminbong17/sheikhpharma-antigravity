@@ -28,6 +28,7 @@ export const useCategories = () => {
       if (error) throw error;
       return (data as DBCategory[]) || [];
     },
+    staleTime: 1000 * 60 * 30,
   });
 };
 
@@ -41,6 +42,7 @@ export const useSubcategories = (categoryId?: string) => {
       if (error) throw error;
       return (data as DBSubCategory[]) || [];
     },
+    staleTime: 1000 * 60 * 30,
   });
 };
 
