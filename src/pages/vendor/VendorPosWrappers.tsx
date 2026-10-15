@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import PosRegisterSessions from "@/pages/pos/PosRegisterSessions";
 import SalesReturns from "@/pages/pos/SalesReturns";
 import StockTransfers from "@/pages/pos/StockTransfers";
-import PosReports from "@/pages/pos/PosReports";
 import StaffCommissions from "@/pages/pos/StaffCommissions";
+
+const PosReports = lazy(() => import("@/pages/pos/PosReports"));
 
 function useVendorId() {
   const { user } = useAuth();
@@ -40,6 +41,10 @@ function withVendor<P extends { vendorId?: string | null; scope: "admin" | "vend
 
 export const VendorPosSessions = withVendor(PosRegisterSessions);
 export const VendorSalesReturns = withVendor(SalesReturns);
-export const VendorStockTransfers = withVendor(StockTransfers);
-export const VendorPosReports = withVendor(PosReports);
+const WrappedPosReports = withVendor(PosReports);
+export const VendorPosReports = (props: any) => (
+  <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading reports...</div>}>
+    <WrappedPosReports {...props} />
+  </Suspense>
+);
 export const VendorStaffCommissions = withVendor(StaffCommissions);

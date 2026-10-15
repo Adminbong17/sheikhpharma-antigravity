@@ -1,4 +1,4 @@
-import * as LucideIcons from "lucide-react";
+import { useState, useEffect } from "react";
 
 export interface CategoryMeta {
   nameBn: string;
@@ -666,6 +666,17 @@ export interface CategoryIconProps {
   iconClassName?: string;
 }
 
+const DynamicLucideIcon = ({ iconName, className }: { iconName: string; className?: string }) => {
+  const [Icon, setIcon] = useState<any>(null);
+  useEffect(() => {
+    import("lucide-react").then((mod: any) => {
+      setIcon(() => mod[iconName] || null);
+    });
+  }, [iconName]);
+  if (!Icon) return null;
+  return <Icon className={className} />;
+};
+
 const CategoryIcon = ({
   iconUrl,
   name,
@@ -675,10 +686,7 @@ const CategoryIcon = ({
   // 1. If explicit lucide icon string is saved in DB
   if (iconUrl?.startsWith("lucide:")) {
     const iconName = iconUrl.replace("lucide:", "");
-    const Icon = (LucideIcons as Record<string, any>)[iconName];
-    if (Icon && (typeof Icon === "function" || (typeof Icon === "object" && Icon.$$typeof))) {
-      return <Icon className={className} />;
-    }
+    return <DynamicLucideIcon iconName={iconName} className={className} />;
   }
 
   // 2. If explicit custom image URL is provided in DB

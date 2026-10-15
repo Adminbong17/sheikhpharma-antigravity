@@ -1,4 +1,11 @@
-import PosReports from "@/pages/pos/PosReports";
+import { lazy, Suspense } from "react";
+
+const PosReports = lazy(() => import("@/pages/pos/PosReports"));
+
 export default function AdminPosReports() {
-  return <PosReports scope="admin" />;
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading reports...</div>}>
+      <PosReports scope="admin" />
+    </Suspense>
+  );
 }
