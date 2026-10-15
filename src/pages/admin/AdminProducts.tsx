@@ -466,6 +466,13 @@ const AdminProducts = () => {
       } else {
         toast.info("Medex এ এই প্রোডাক্টের ছবি পাওয়া যায়নি", { id: toastId });
       }
+
+      if (form.id) {
+        await supabase
+          .from("products")
+          .update({ image_last_searched_at: new Date().toISOString() })
+          .eq("id", form.id);
+      }
     } catch (err: any) {
       console.error("Medex Image Fetch Error:", err);
       toast.error("Medex থেকে ছবি আনতে ব্যর্থ: " + (err.message || "Unknown error"), { id: toastId });

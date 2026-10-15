@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import {
   Loader2, Search, CheckCircle2, XCircle, Image as ImageIcon,
-  Play, Square, Download, RefreshCw, Package, BarChart3
+  Play, Square, Download, RefreshCw, Package, BarChart3, Clock
 } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { uploadToVault } from "@/lib/vaultStorage";
@@ -29,6 +29,7 @@ interface SyncItem {
 
 const MedexImageSync = () => {
   const [batchSize, setBatchSize] = useState(25);
+  const [cooldownDays, setCooldownDays] = useState(15);
   const [autoAccept, setAutoAccept] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [items, setItems] = useState<SyncItem[]>([]);
@@ -38,7 +39,7 @@ const MedexImageSync = () => {
 
   // Stats query
   const { data: dbStats, refetch: refetchStats } = useQuery({
-    queryKey: ["medex-sync-stats"],
+    queryKey: ["medex-sync-stats", cooldownDays],
     queryFn: async () => {
       const { count: total } = await supabase
         .from("products")
@@ -53,10 +54,29 @@ const MedexImageSync = () => {
 
       const t = total || 0;
       const w = withImage || 0;
+      const without = t - w;
+
+      let inCooldown = 0;
+      if (cooldownDays > 0) {
+        const cutoffDate = new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000).toISOString();
+        const { count: cdCount } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true)
+          .is("image_url", null)
+          .not("image_last_searched_at", "is", null)
+          .gte("image_last_searched_at", cutoffDate);
+        inCooldown = cdCount || 0;
+      }
+
+      const readyToSync = Math.max(0, without - inCooldown);
+
       return {
         total: t,
         withImage: w,
-        withoutImage: t - w,
+        withoutImage: without,
+        inCooldown,
+        readyToSync,
         rate: t > 0 ? Math.round((w / t) * 100) : 0,
       };
     },
@@ -89,6 +109,12 @@ const MedexImageSync = () => {
         }
         return "found";
       } else {
+        // Record search attempt timestamp so it enters cooldown (15 days)
+        await supabase
+          .from("products")
+          .update({ image_last_searched_at: new Date().toISOString() })
+          .eq("id", product.id);
+
         updateItem(product.id, { status: "not_found" });
         return "not_found";
       }
@@ -120,7 +146,10 @@ const MedexImageSync = () => {
 
       const { error } = await supabase
         .from("products")
-        .update({ image_url: finalUrl })
+        .update({
+          image_url: finalUrl,
+          image_last_searched_at: new Date().toISOString(),
+        })
         .eq("id", productId);
 
       if (error) throw error;
@@ -142,11 +171,18 @@ const MedexImageSync = () => {
     let hasMore = true;
 
     while (hasMore && !stopRef.current) {
-      const { data: products } = await supabase
+      let query = supabase
         .from("products")
-        .select("id, name")
+        .select("id, name, image_last_searched_at")
         .is("image_url", null)
-        .eq("is_active", true)
+        .eq("is_active", true);
+
+      if (cooldownDays > 0) {
+        const cutoffDate = new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000).toISOString();
+        query = query.or(`image_last_searched_at.is.null,image_last_searched_at.lt.${cutoffDate}`);
+      }
+
+      const { data: products } = await query
         .order("name")
         .range(currentOffset, currentOffset + batchSize - 1);
 
@@ -235,7 +271,7 @@ const MedexImageSync = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-blue-600">
@@ -263,7 +299,21 @@ const MedexImageSync = () => {
             <p className="text-2xl font-bold mt-1">{dbStats?.withoutImage?.toLocaleString() || "—"}</p>
           </CardContent>
         </Card>
-        <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20">
+        <Card className="border-teal-200 bg-teal-50/50 dark:bg-teal-950/20">
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex items-center gap-2 text-teal-600">
+              <Clock className="h-4 w-4" />
+              <span className="text-xs font-medium">সিঙ্কের জন্য প্রস্তুত</span>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-teal-700 dark:text-teal-400">
+              {dbStats?.readyToSync?.toLocaleString() || "—"}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {dbStats?.inCooldown ? `${dbStats.inCooldown}টি ${cooldownDays} দিনের বিরতিতে` : "সবগুলো প্রস্তুত"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20 col-span-2 sm:col-span-1">
           <CardContent className="pt-4 pb-3 px-4">
             <div className="flex items-center gap-2 text-purple-600">
               <BarChart3 className="h-4 w-4" />
@@ -306,7 +356,22 @@ const MedexImageSync = () => {
               </Button>
             </div>
 
-            <div className="flex items-center gap-4 ml-auto">
+            <div className="flex flex-wrap items-center gap-4 ml-auto">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="cooldown-days" className="text-xs text-muted-foreground whitespace-nowrap">পুনরায় খোঁজার বিরতি:</Label>
+                <Select value={String(cooldownDays)} onValueChange={v => setCooldownDays(Number(v))} disabled={isRunning}>
+                  <SelectTrigger className="w-28 h-8 text-xs" id="cooldown-days">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">১৫ দিন (ডিফল্ট)</SelectItem>
+                    <SelectItem value="30">৩০ দিন</SelectItem>
+                    <SelectItem value="7">৭ দিন</SelectItem>
+                    <SelectItem value="0">০ দিন (সবগুলো)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-center gap-2">
                 <Label htmlFor="batch-size" className="text-xs text-muted-foreground whitespace-nowrap">ব্যাচ সাইজ:</Label>
                 <Select value={String(batchSize)} onValueChange={v => setBatchSize(Number(v))} disabled={isRunning}>
