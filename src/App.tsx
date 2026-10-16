@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
@@ -232,6 +232,10 @@ const App = () => (
                     <Route path="/pre-orders" element={<PreOrderProducts />} />
                     <Route path="/flash-deals" element={<FlashDealsPage />} />
                     <Route path="/page/:slug" element={<StaticPage />} />
+                    <Route path="/about" element={<Navigate to="/page/about" replace />} />
+                    <Route path="/about-us" element={<Navigate to="/page/about" replace />} />
+                    <Route path="/contact" element={<Navigate to="/page/contact-us" replace />} />
+                    <Route path="/contact-us" element={<Navigate to="/page/contact-us" replace />} />
                     <Route path="/careers" element={<CareersApply />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/install" element={<InstallApp />} />

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Clock, X, Sparkles, ArrowRight, Pill } from "lucide-react";
+import { Search, Clock, X, Sparkles, ArrowRight, Pill, Home, LayoutGrid, Tag, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import CartSheet from "@/components/CartSheet";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -317,6 +317,7 @@ const SearchInputBox = ({
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 160);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -326,7 +327,15 @@ const Navbar = () => {
   const mobileWrapperRef = useRef<HTMLDivElement>(null);
   const { formatPrice } = useCurrency();
   const { data: siteSettings } = useSiteSettings();
-  const { t } = useLanguage();
+  const { t, b } = useLanguage();
+
+  const navLinks = [
+    { href: "/", labelBn: "হোম", labelEn: "Home", icon: Home },
+    { href: "/categories", labelBn: "ক্যাটাগরি", labelEn: "Categories", icon: LayoutGrid },
+    { href: "/brands", labelBn: "ব্র্যান্ড", labelEn: "Brands", icon: Tag },
+    { href: "/page/about", labelBn: "আমাদের সম্পর্কে", labelEn: "About Us", icon: Info },
+    { href: "/page/contact-us", labelBn: "যোগাযোগ", labelEn: "Contact", icon: Phone },
+  ];
 
   const { data: suggestions = [], isFetching } = useQuery({
     queryKey: ["search-suggestions", debouncedQuery],
@@ -384,49 +393,78 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-[#0F3577] via-[#164796] to-[#0D2E68] text-white shadow-md border-b border-white/10 backdrop-blur-md">
       <div className="container mx-auto px-3 sm:px-4">
-        {/* Desktop Single-Row Unified Luxury Header */}
-        <div className="hidden md:flex items-center justify-between gap-4 lg:gap-8 h-16">
-          {/* Brand Logo & Name */}
-          <Link to="/" className="shrink-0 flex items-center gap-3 group">
-            {siteSettings?.logo_url ? (
-              <div className="relative">
-                <div className="absolute -inset-1 bg-white/20 rounded-full blur-sm group-hover:bg-white/30 transition-all duration-300" />
-                <img
-                  src={siteSettings.logo_url}
-                  alt={siteSettings.site_name || "Sheikh Pharma"}
-                  className="h-10 w-10 rounded-full object-cover ring-2 ring-white/80 shadow-md relative z-10 group-hover:scale-105 transition-transform"
-                />
+        {/* Desktop Header: Top Bar (Logo, Nav Links, Actions) + Lower Search Bar */}
+        <div className="hidden md:flex flex-col">
+          {/* Top Row: Logo on Left, Nav Links in Center, Actions on Right */}
+          <div className="flex items-center justify-between gap-4 h-16">
+            {/* Brand Logo & Name */}
+            <Link to="/" className="shrink-0 flex items-center gap-3 group">
+              {siteSettings?.logo_url ? (
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-white/20 rounded-full blur-sm group-hover:bg-white/30 transition-all duration-300" />
+                  <img
+                    src={siteSettings.logo_url}
+                    alt={siteSettings.site_name || "Sheikh Pharma"}
+                    className="h-10 w-10 rounded-full object-cover ring-2 ring-white/80 shadow-md relative z-10 group-hover:scale-105 transition-transform"
+                  />
+                </div>
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-white shadow-md">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-lg lg:text-xl font-bold tracking-tight text-white leading-tight drop-shadow-sm group-hover:text-blue-100 transition-colors">
+                  {siteSettings?.site_name || "Sheikh Pharma"}
+                </span>
+                <span className="text-[10px] text-blue-200/90 font-semibold tracking-wide">
+                  {t("common.model_pharmacy", "Model Pharmacy & Health")}
+                </span>
               </div>
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-white shadow-md">
-                <Sparkles className="h-5 w-5" />
-              </div>
-            )}
-            <div className="flex flex-col">
-              <span className="text-lg lg:text-xl font-bold tracking-tight text-white leading-tight drop-shadow-sm group-hover:text-blue-100 transition-colors">
-                {siteSettings?.site_name || "Sheikh Pharma"}
-              </span>
-              <span className="text-[10px] text-blue-200/90 font-semibold tracking-wide">
-                {t("common.model_pharmacy", "Model Pharmacy & Health")}
-              </span>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Center Integrated Search Bar */}
-          <div className="flex-1 max-w-2xl">
-            <SearchInputBox {...baseSearchProps} wrapperRef={desktopWrapperRef} />
+            {/* Center Navigation Links: Home, Categories, Brands, About Us, Contact */}
+            <nav className="flex items-center gap-1 lg:gap-1.5 xl:gap-2">
+              {navLinks.map((item) => {
+                const isActive =
+                  item.href === "/"
+                    ? location.pathname === "/"
+                    : location.pathname === item.href || location.pathname.startsWith(item.href + "/");
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`px-3 py-1.5 rounded-full text-xs lg:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-white/25 text-white shadow-sm ring-1 ring-white/40 font-bold backdrop-blur-sm"
+                        : "text-white/85 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <item.icon className="h-3.5 w-3.5 opacity-90 shrink-0" />
+                    <span>{b(item.labelBn, item.labelEn)}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Right Action Icons (Language Toggle, Profile & Cart) */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <LanguageToggle />
+              <ProfileDropdown />
+              <CartSheet />
+            </div>
           </div>
 
-          {/* Right Action Icons (Language Toggle, Profile & Cart) */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <LanguageToggle />
-            <ProfileDropdown />
-            <CartSheet />
+          {/* Bottom Row: Centered Lower Search Bar */}
+          <div className="pb-3 pt-0.5 flex justify-center">
+            <div className="w-full max-w-2xl lg:max-w-3xl">
+              <SearchInputBox {...baseSearchProps} wrapperRef={desktopWrapperRef} />
+            </div>
           </div>
         </div>
 
-        {/* Mobile Header (2 compact sleek rows) */}
-        <div className="md:hidden py-2.5 space-y-2.5">
+        {/* Mobile Header (Compact 3 rows: Brand, Search, Quick Nav Pills) */}
+        <div className="md:hidden py-2 space-y-2">
           {/* Mobile Top Row: Logo on left, Actions on right */}
           <div className="flex items-center justify-between gap-2">
             <Link to="/" className="flex items-center gap-2 group min-w-0">
@@ -449,9 +487,33 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile Search Row: Integrated cleanly without extra cards */}
+          {/* Mobile Search Row */}
           <div>
             <SearchInputBox {...baseSearchProps} wrapperRef={mobileWrapperRef} />
+          </div>
+
+          {/* Mobile Quick Nav Pills (Scrollable) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 pt-0.5 text-xs">
+            {navLinks.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? location.pathname === "/"
+                  : location.pathname === item.href || location.pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive
+                      ? "bg-white/25 text-white font-bold ring-1 ring-white/35 backdrop-blur-sm"
+                      : "bg-white/10 text-white/90 hover:bg-white/20"
+                  }`}
+                >
+                  <item.icon className="h-3 w-3 opacity-90 shrink-0" />
+                  <span>{b(item.labelBn, item.labelEn)}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
