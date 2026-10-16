@@ -43,6 +43,19 @@ import {
   ArrowRight,
   BadgePercent,
   CheckCheck,
+  Droplets,
+  Zap,
+  Dna,
+  Scan,
+  Radio,
+  Waves,
+  Bone,
+  Stethoscope,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  SlidersHorizontal,
+  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import BackButton from "@/components/BackButton";
@@ -152,6 +165,144 @@ const HEALTH_PACKAGES: HealthPackage[] = [
   },
 ];
 
+export const CATEGORY_META_MAP: Record<
+  string,
+  {
+    title_bn: string;
+    subtitle: string;
+    icon: any;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+  }
+> = {
+  Pathology: {
+    title_bn: "রক্ত ও প্যাথলজি",
+    subtitle: "CBC, অ্যালার্জি ও রুটিন ব্লাড",
+    icon: Droplets,
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-50 dark:bg-red-950/40",
+    borderColor: "border-red-200 dark:border-red-900/40 hover:border-red-400",
+  },
+  Biochemistry: {
+    title_bn: "বায়োকেমিস্ট্রি ও সুগার",
+    subtitle: "ইলেক্ট্রোলাইটস, সুগার, ফেরিটিন",
+    icon: Zap,
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/40",
+    borderColor: "border-amber-200 dark:border-amber-900/40 hover:border-amber-400",
+  },
+  Hormone: {
+    title_bn: "থাইরয়েড ও হরমোন",
+    subtitle: "TSH, T3, T4, টেস্টোস্টেরন",
+    icon: Activity,
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/40",
+    borderColor: "border-purple-200 dark:border-purple-900/40 hover:border-purple-400",
+  },
+  "Urine Test": {
+    title_bn: "ইউরিন ও কিডনি ফাংশন",
+    subtitle: "Urine R/E, C/S, ইউরিয়া, ক্রিয়েটিনিন",
+    icon: Beaker,
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/40",
+    borderColor: "border-blue-200 dark:border-blue-900/40 hover:border-blue-400",
+  },
+  Cardiac: {
+    title_bn: "হার্ট ও হৃদরোগ টেস্ট",
+    subtitle: "ECG, 2D Echo, ETT, ডপলার",
+    icon: HeartPulse,
+    color: "text-rose-600 dark:text-rose-400",
+    bgColor: "bg-rose-50 dark:bg-rose-950/40",
+    borderColor: "border-rose-200 dark:border-rose-900/40 hover:border-rose-400",
+  },
+  USG: {
+    title_bn: "আল্ট্রাসনোগ্রাম (USG)",
+    subtitle: "হোল অ্যাবডোমেন, প্রেগন্যান্সি, থাইরয়েড",
+    icon: Waves,
+    color: "text-cyan-600 dark:text-cyan-400",
+    bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
+    borderColor: "border-cyan-200 dark:border-cyan-900/40 hover:border-cyan-400",
+  },
+  "CT Scan": {
+    title_bn: "সিটি স্ক্যান (CT Scan)",
+    subtitle: "ব্রেন, কন্ট্রাস্ট, KUB, অ্যাবডোমেন",
+    icon: Scan,
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
+    borderColor: "border-indigo-200 dark:border-indigo-900/40 hover:border-indigo-400",
+  },
+  MRI: {
+    title_bn: "এমআরআই স্ক্যান (MRI)",
+    subtitle: "ব্রেন, স্পাইন, অরবিট, MRCP",
+    icon: Radio,
+    color: "text-violet-600 dark:text-violet-400",
+    bgColor: "bg-violet-50 dark:bg-violet-950/40",
+    borderColor: "border-violet-200 dark:border-violet-900/40 hover:border-violet-400",
+  },
+  "X-Ray": {
+    title_bn: "ডিজিটাল এক্স-রে",
+    subtitle: "চেস্ট, স্পাইন, IVU, ম্যামোগ্রাফি",
+    icon: Bone,
+    color: "text-slate-700 dark:text-slate-300",
+    bgColor: "bg-slate-100 dark:bg-slate-800/40",
+    borderColor: "border-slate-200 dark:border-slate-700 hover:border-slate-400",
+  },
+  Endoscopy: {
+    title_bn: "এন্ডোস্কোপি ও স্পেশাল",
+    subtitle: "এন্ডোস্কোপি, কলোনোস্কোপি, স্পাইরোমেট্রি",
+    icon: Stethoscope,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
+    borderColor: "border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-400",
+  },
+  Immunology: {
+    title_bn: "ইমিউনোলজি ও সেরোলজি",
+    subtitle: "RA টেস্ট, রুবেলা, Rh অ্যান্টিবডি",
+    icon: ShieldCheck,
+    color: "text-teal-600 dark:text-teal-400",
+    bgColor: "bg-teal-50 dark:bg-teal-950/40",
+    borderColor: "border-teal-200 dark:border-teal-900/40 hover:border-teal-400",
+  },
+  Microbiology: {
+    title_bn: "মাইক্রোবায়োলজি ও মল-কফ",
+    subtitle: "সিমেন, স্টুল R/E, স্পুটাম AFB",
+    icon: Microscope,
+    color: "text-lime-700 dark:text-lime-400",
+    bgColor: "bg-lime-50 dark:bg-lime-950/40",
+    borderColor: "border-lime-200 dark:border-lime-900/40 hover:border-lime-400",
+  },
+  "ICT Test": {
+    title_bn: "আইসিটি র‍্যাপিড টেস্ট",
+    subtitle: "ডেঙ্গু, ম্যালেরিয়া, কালাজ্বর, টিবি",
+    icon: Sparkles,
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/40",
+    borderColor: "border-orange-200 dark:border-orange-900/40 hover:border-orange-400",
+  },
+  "PCR/Viral": {
+    title_bn: "পিসিআর ও ভাইরাল লোড",
+    subtitle: "HBV-DNA, HCV-RNA মলিকুলার",
+    icon: Dna,
+    color: "text-fuchsia-600 dark:text-fuchsia-400",
+    bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+    borderColor: "border-fuchsia-200 dark:border-fuchsia-900/40 hover:border-fuchsia-400",
+  },
+};
+
+export const getCategoryMeta = (cat: string) => {
+  return (
+    CATEGORY_META_MAP[cat] || {
+      title_bn: cat,
+      subtitle: `${cat} টেস্ট`,
+      icon: Microscope,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      borderColor: "border-primary/20 hover:border-primary/50",
+    }
+  );
+};
+
 const LabTest = () => {
   const { addItem, clearCart } = useCart();
   const { user } = useAuth();
@@ -164,6 +315,8 @@ const LabTest = () => {
   const [selectedTests, setSelectedTests] = useState<Set<string>>(new Set());
   const [labTests, setLabTests] = useState<LabTestItem[]>([]);
   const [loadingTests, setLoadingTests] = useState(true);
+  const [showAllTestsList, setShowAllTestsList] = useState(false);
+  const testsListRef = useRef<HTMLDivElement>(null);
 
   // Location handling (non-blocking, browse-first)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -304,13 +457,30 @@ const LabTest = () => {
   }, [labTests, selectedCenter, centerTestAssignments]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return availableTests.filter((t) => {
-      const q = search.trim().toLowerCase();
-      const matchSearch = !q || t.name.toLowerCase().includes(q) || (t.name_bn && t.name_bn.toLowerCase().includes(q));
-      const matchCat = selectedCategory === "all" || t.category === selectedCategory;
+      const matchSearch =
+        !q ||
+        t.name.toLowerCase().includes(q) ||
+        (t.name_bn && t.name_bn.toLowerCase().includes(q)) ||
+        (t.category && t.category.toLowerCase().includes(q));
+      // When searching, search all available tests directly; otherwise respect selected category
+      const matchCat = q ? true : selectedCategory === "all" || t.category === selectedCategory;
       return matchSearch && matchCat;
     });
   }, [availableTests, search, selectedCategory]);
+
+  const handleCategoryClick = (cat: string) => {
+    if (selectedCategory === cat) {
+      setSelectedCategory("all");
+    } else {
+      setSelectedCategory(cat);
+      setSearch("");
+      setTimeout(() => {
+        testsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  };
 
   // Popular tests: If none flagged in DB, pick common essential tests like CBC, Creatinine, Electrolytes, TSH, Glucose, etc.
   const popularTests = useMemo(() => {
@@ -737,22 +907,24 @@ const LabTest = () => {
           </section>
         )}
 
-        {/* TEST SEARCH & CATEGORIES */}
+        {/* TEST SEARCH BAR */}
         <section className="mb-6">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="ল্যাব টেস্টের নাম খুঁজুন (যেমন: CBC, Sugar, Lipid, TSH, Creatinine)..."
-                className="pl-10 h-11 rounded-xl border-2 border-primary/20 focus:border-primary text-sm font-medium"
+                placeholder="১২৩টি টেস্টের মধ্যে সার্চ করুন (যেমন: CBC, Sugar, TSH, ECG, USG, X-Ray, CT Scan, Urea...)..."
+                className="pl-10 pr-10 h-12 rounded-xl border-2 border-primary/25 focus:border-primary text-xs sm:text-sm font-semibold shadow-xs bg-card"
               />
               {search && (
                 <button
+                  type="button"
                   onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+                  title="মুছে ফেলুন"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -774,21 +946,159 @@ const LabTest = () => {
                     },
                   });
                 }}
-                className="font-bold bg-gradient-to-r from-primary to-blue-600 text-white shadow-md h-11 px-4 text-xs shrink-0 rounded-xl"
+                className="font-bold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-md h-12 px-4 text-xs shrink-0 rounded-xl"
               >
-                <Search className="h-3.5 w-3.5 mr-1.5" />
+                <Building2 className="h-4 w-4 mr-1.5" />
                 সেন্টার খুঁজুন ({selectedTests.size})
               </Button>
             )}
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Search Result Header info */}
+          {search && (
+            <div className="mt-3 flex items-center justify-between text-xs px-1">
+              <span className="font-bold text-foreground">
+                🔍 "{search}" এর জন্য <span className="text-primary font-black">{filtered.length}টি</span> টেস্ট পাওয়া গেছে
+              </span>
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-primary font-bold hover:underline cursor-pointer"
+              >
+                ✕ সার্চ মুছুন
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* 14 CATEGORY SELECTION CARDS (JAR JETA LAGBE CHOISE KORBE) */}
+        {!search && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between gap-2 mb-3.5">
+              <div>
+                <h2 className="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4 text-primary" />
+                  ক্যাটাগরি অনুযায়ী টেস্ট বেছে নিন
+                </h2>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  যার যে বিভাগের টেস্ট লাগবে সেই কার্ডে ক্লিক করে সহজেই টেস্ট খুঁজে নিন
+                </p>
+              </div>
+
+              {selectedCategory !== "all" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCategory("all")}
+                  className="text-xs font-bold border-primary/40 text-primary hover:bg-primary hover:text-white rounded-xl shrink-0"
+                >
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  সব ক্যাটাগরি ({availableTests.length})
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+              {categories.map((cat) => {
+                const meta = getCategoryMeta(cat);
+                const IconComp = meta.icon;
+                const count = availableTests.filter((t) => t.category === cat).length;
+                const isSelected = selectedCategory === cat;
+
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat)}
+                    className={`group relative flex flex-col items-center text-center p-3 sm:p-3.5 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/30 scale-[1.02]"
+                        : `${meta.borderColor} ${meta.bgColor} hover:shadow-md hover:scale-[1.02] bg-card`
+                    }`}
+                  >
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center mb-2 transition-transform group-hover:scale-110 shadow-2xs ${meta.bgColor} ${meta.color} border border-border/40`}>
+                      <IconComp className="h-5 w-5" />
+                    </div>
+
+                    <p className="text-xs sm:text-sm font-extrabold text-foreground leading-tight line-clamp-1 mb-0.5">
+                      {meta.title_bn}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-medium truncate max-w-full">
+                      {cat}
+                    </p>
+
+                    <span className={`mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background/80 text-foreground border-border/60"
+                    }`}>
+                      {count} টি টেস্ট
+                    </span>
+
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary text-white flex items-center justify-center shadow-xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* TESTS DISPLAY SECTION */}
+        <section ref={testsListRef} id="tests-list-container" className="mb-8 scroll-mt-20">
+          {/* Active Category Header Banner */}
+          {!search && selectedCategory !== "all" && (() => {
+            const activeMeta = getCategoryMeta(selectedCategory);
+            const ActiveIcon = activeMeta.icon;
+            return (
+              <div className="mb-5 p-4 rounded-2xl border-2 border-primary/30 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${activeMeta.bgColor} ${activeMeta.color} border border-border/40 shrink-0 shadow-xs`}>
+                    <ActiveIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-extrabold text-foreground">
+                        {activeMeta.title_bn}
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/25">
+                        {selectedCategory}
+                      </span>
+                      <span className="text-xs font-black text-emerald-600">
+                        • {filtered.length} টি টেস্ট
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {activeMeta.subtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedCategory("all")}
+                    className="font-bold text-xs rounded-xl border-primary/40 text-primary hover:bg-primary hover:text-white"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1" />
+                    সব ক্যাটাগরি দেখুন ({availableTests.length})
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Horizontal Quick Switch Pills */}
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                 selectedCategory === "all"
-                  ? "bg-primary text-primary-foreground shadow-md scale-102"
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
@@ -800,10 +1110,10 @@ const LabTest = () => {
               return (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                     selectedCategory === cat
-                      ? "bg-primary text-primary-foreground shadow-md scale-102"
+                      ? "bg-primary text-primary-foreground shadow-md"
                       : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
@@ -812,73 +1122,29 @@ const LabTest = () => {
               );
             })}
           </div>
-        </section>
 
-        {/* POPULAR QUICK TESTS (WHEN BROWSING ALL & NO SEARCH) */}
-        {!search && selectedCategory === "all" && popularTests.length > 0 && (
-          <section className="mb-6">
-            <h2 className="text-sm font-extrabold text-foreground mb-3 flex items-center gap-1.5">
-              <span>🔥 সর্বাধিক বুকড টেস্ট (Most Popular Tests)</span>
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {popularTests.map((t) => {
-                const isSelected = selectedTests.has(t.id);
-                const price = getTestPrice(t.id, t.price);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleTest(t.id)}
-                    className={`flex flex-col justify-between p-3 rounded-xl border-2 transition-all text-left ${
-                      isSelected
-                        ? "border-primary bg-primary/10 shadow-sm"
-                        : "border-border bg-card hover:border-primary/40 shadow-2xs"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          {t.category || "ল্যাব"}
-                        </span>
-                        {isSelected && <Check className="h-4 w-4 text-primary stroke-[3]" />}
-                      </div>
-                      <p className="text-xs font-extrabold text-foreground line-clamp-1">{t.name}</p>
-                      {t.name_bn && <p className="text-[10px] text-muted-foreground truncate">{t.name_bn}</p>}
-                    </div>
-
-                    <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
-                      <span className="text-xs font-black text-primary">৳{price}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                      }`}>
-                        {isSelected ? "যুক্ত হয়েছে" : "+ যোগ"}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* ALL TESTS LIST / CARDS */}
-        <section className="mb-8">
+          {/* Header test count */}
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
               <Microscope className="h-4 w-4 text-primary" />
-              {selectedCategory === "all" ? "সকল টেস্ট তালিকা" : `${selectedCategory} টেস্ট`}
-              <span className="text-muted-foreground font-medium">({filtered.length})</span>
+              {search
+                ? `সার্চ রেজাল্ট (${filtered.length})`
+                : selectedCategory === "all"
+                ? "টেস্ট তালিকা"
+                : `${selectedCategory} এর টেস্টসমূহ (${filtered.length})`}
             </h2>
 
             {selectedTests.size > 0 && (
               <button
                 onClick={() => setSelectedTests(new Set())}
-                className="text-xs font-bold text-destructive hover:underline"
+                className="text-xs font-bold text-destructive hover:underline cursor-pointer"
               >
-                সব মুছুন ({selectedTests.size})
+                সিলেকশন মুছুন ({selectedTests.size})
               </button>
             )}
           </div>
 
+          {/* Loading state */}
           {loadingTests ? (
             <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
@@ -888,90 +1154,205 @@ const LabTest = () => {
             <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-muted/20">
               <Microscope className="h-10 w-10 mx-auto mb-2 text-muted-foreground/60" />
               <p className="text-sm font-bold text-foreground">কোনো টেস্ট পাওয়া যায়নি</p>
-              <p className="text-xs text-muted-foreground mt-1">অন্য কোনো কিওয়ার্ড দিয়ে চেষ্টা করুন বা সরাসরি ফোন দিন</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                অন্য কোনো কিওয়ার্ড দিয়ে চেষ্টা করুন বা সরাসরি আমাদের মেডিকেল টিমে ফোন দিন
+              </p>
               <div className="mt-4 flex justify-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => { setSearch(""); setSelectedCategory("all"); }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSearch("");
+                    setSelectedCategory("all");
+                  }}
+                >
                   সব টেস্ট দেখুন
                 </Button>
                 <a href="tel:01712472839">
                   <Button size="sm" className="bg-primary text-white">
-                    <Phone className="h-3.5 w-3.5 mr-1" /> সাহায্য চাই
+                    <Phone className="h-3.5 w-3.5 mr-1" /> কল দিয়ে সাহায্য চাই
                   </Button>
                 </a>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((t) => {
-                const isSelected = selectedTests.has(t.id);
-                const price = getTestPrice(t.id, t.price);
-                const isGovt = isGovtRate(t.id);
+            <>
+              {/* IF "ALL" IS SELECTED AND NO SEARCH: SHOW TOP POPULAR TESTS FIRST */}
+              {!search && selectedCategory === "all" && popularTests.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs sm:text-sm font-extrabold text-foreground flex items-center gap-1.5">
+                      <span>🔥 সর্বাধিক বুকড ও প্রয়োজনীয় টেস্টসমূহ</span>
+                    </h3>
+                    <span className="text-[11px] text-muted-foreground font-semibold">
+                      (Top Recommended)
+                    </span>
+                  </div>
 
-                return (
-                  <div
-                    key={t.id}
-                    className={`flex flex-col justify-between p-3.5 rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30"
-                        : "border-border bg-card hover:border-primary/40 shadow-xs"
-                    }`}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {popularTests.map((t) => {
+                      const isSelected = selectedTests.has(t.id);
+                      const price = getTestPrice(t.id, t.price);
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => toggleTest(t.id)}
+                          className={`flex flex-col justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                            isSelected
+                              ? "border-primary bg-primary/10 shadow-sm"
+                              : "border-border bg-card hover:border-primary/40 shadow-2xs"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                {t.category || "ল্যাব"}
+                              </span>
+                              {isSelected && <Check className="h-4 w-4 text-primary stroke-[3]" />}
+                            </div>
+                            <p className="text-xs font-extrabold text-foreground line-clamp-1">{t.name}</p>
+                            {t.name_bn && <p className="text-[10px] text-muted-foreground truncate">{t.name_bn}</p>}
+                          </div>
+
+                          <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
+                            <span className="text-xs font-black text-primary">৳{price}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                            }`}>
+                              {isSelected ? "যুক্ত হয়েছে" : "+ যোগ"}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* COLLAPSIBLE BANNER FOR ALL 123 TESTS (WHEN "ALL" & NO SEARCH) */}
+              {!search && selectedCategory === "all" && (
+                <div className="mb-6 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 sm:p-5 text-center">
+                  <Layers className="h-7 w-7 text-primary mx-auto mb-2" />
+                  <h3 className="text-sm sm:text-base font-extrabold text-foreground">
+                    সকল ১২৩টি টেস্টের সম্পূর্ণ তালিকা দেখতে চান?
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                    নির্দিষ্ট টেস্ট পেতে উপরের ক্যাটাগরি কার্ড অথবা সার্চবার ব্যবহার করুন, অথবা নিচে ক্লিক করে সব টেস্ট একসাথে এক্সপ্লোর করুন।
+                  </p>
+                  <Button
+                    onClick={() => setShowAllTestsList(!showAllTestsList)}
+                    variant="outline"
+                    className="mt-3 font-bold text-xs sm:text-sm h-10 px-5 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white shadow-xs"
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                          {t.category || "Pathology"}
-                        </span>
-                        {isGovt && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
-                            সরকারি রেট
-                          </span>
-                        )}
-                        <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> ১২-২৪ ঘণ্টা
-                        </span>
-                      </div>
+                    {showAllTestsList ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-1.5" />
+                        তালিকা সংক্ষেপ করুন (Hide Full List)
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-1.5" />
+                        সকল ১২৩টি টেস্ট একসাথে দেখুন ({availableTests.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
 
-                      <h3 className="text-sm font-bold text-foreground leading-snug">{t.name}</h3>
-                      {t.name_bn && <p className="text-xs text-muted-foreground mt-0.5">{t.name_bn}</p>}
+              {/* TESTS CARDS GRID (RENDERED WHEN: SEARCH ACTIVE, OR CATEGORY SELECTED, OR USER EXPANDED ALL TESTS) */}
+              {(search || selectedCategory !== "all" || showAllTestsList) && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filtered.map((t) => {
+                      const isSelected = selectedTests.has(t.id);
+                      const price = getTestPrice(t.id, t.price);
+                      const isGovt = isGovtRate(t.id);
 
-                      <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3 text-emerald-500" /> হোম কালেকশন
-                        </span>
-                        <span>•</span>
-                        <span>নির্ভুল ল্যাব রিপোর্ট</span>
-                      </div>
-                    </div>
+                      return (
+                        <div
+                          key={t.id}
+                          className={`flex flex-col justify-between p-3.5 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30"
+                              : "border-border bg-card hover:border-primary/40 shadow-xs"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                                {t.category || "Pathology"}
+                              </span>
+                              {isGovt && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+                                  সরকারি রেট
+                                </span>
+                              )}
+                              <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> ১২-২৪ ঘণ্টা
+                              </span>
+                            </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between">
-                      <div>
-                        <span className="text-base font-black text-primary">৳{price}</span>
-                      </div>
+                            <h3 className="text-sm font-bold text-foreground leading-snug">{t.name}</h3>
+                            {t.name_bn && <p className="text-xs text-muted-foreground mt-0.5">{t.name_bn}</p>}
 
+                            <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3 text-emerald-500" /> হোম কালেকশন
+                              </span>
+                              <span>•</span>
+                              <span>নির্ভুল ল্যাব রিপোর্ট</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                            <div>
+                              <span className="text-base font-black text-primary">৳{price}</span>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              onClick={() => toggleTest(t.id)}
+                              className={`h-8 px-3 rounded-lg font-bold text-xs transition-all ${
+                                isSelected
+                                  ? "bg-primary text-primary-foreground shadow-xs"
+                                  : "bg-muted hover:bg-primary hover:text-primary-foreground text-foreground"
+                              }`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 mr-1" /> নির্বাচিত
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-3.5 w-3.5 mr-1" /> যোগ করুন
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Collapse Button if viewing all tests in expanded mode */}
+                  {!search && selectedCategory === "all" && showAllTestsList && (
+                    <div className="mt-6 text-center">
                       <Button
-                        size="sm"
-                        onClick={() => toggleTest(t.id)}
-                        className={`h-8 px-3 rounded-lg font-bold text-xs transition-all ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "bg-muted hover:bg-primary hover:text-primary-foreground text-foreground"
-                        }`}
+                        variant="outline"
+                        onClick={() => {
+                          setShowAllTestsList(false);
+                          testsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className="font-bold text-xs rounded-xl border-primary text-primary hover:bg-primary hover:text-white"
                       >
-                        {isSelected ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 mr-1" /> নির্বাচিত
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="h-3.5 w-3.5 mr-1" /> যোগ করুন
-                          </>
-                        )}
+                        <ChevronUp className="h-4 w-4 mr-1.5" />
+                        তালিকা সংক্ষেপ করুন (Collapse List)
                       </Button>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </section>
 
