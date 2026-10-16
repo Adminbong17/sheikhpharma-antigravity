@@ -472,7 +472,7 @@ const LabTest = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl pb-32">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl pb-52 md:pb-32">
         <div className="flex items-center justify-between gap-3 mb-4">
           <BackButton />
 
@@ -1066,26 +1066,26 @@ const LabTest = () => {
 
       {/* FLOATING BOTTOM CHECKOUT DOCK */}
       {selectedTests.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t-2 border-primary/30 p-3 sm:p-4 shadow-2xl">
-          <div className="container mx-auto max-w-4xl flex items-center justify-between gap-3">
+        <div className="fixed bottom-[74px] md:bottom-0 left-2 right-2 md:left-0 md:right-0 z-40 bg-card/95 backdrop-blur-md border-2 md:border-t-2 md:border-x-0 md:border-b-0 border-primary/40 rounded-2xl md:rounded-none p-2.5 sm:p-4 shadow-2xl transition-all animate-in slide-in-from-bottom duration-200">
+          <div className="container mx-auto max-w-4xl flex items-center justify-between gap-2 sm:gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-extrabold text-foreground">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-foreground truncate">
                   {selectedTests.size} টি টেস্ট নির্বাচিত
                 </span>
                 <button
                   onClick={() => setSelectedTests(new Set())}
-                  className="text-[11px] font-bold text-destructive hover:underline hidden sm:inline"
+                  className="text-[10px] sm:text-[11px] font-bold text-destructive hover:underline"
                 >
                   ক্লিয়ার
                 </button>
               </div>
-              <p className="text-base sm:text-lg font-black text-primary">
+              <p className="text-sm sm:text-lg font-black text-primary">
                 মোট: ৳{subtotal}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
@@ -1101,17 +1101,17 @@ const LabTest = () => {
                     },
                   });
                 }}
-                className="font-bold text-xs h-10 px-3 border-primary/40 hover:bg-primary/10"
+                className="font-bold text-[11px] sm:text-xs h-9 sm:h-10 px-2.5 sm:px-3 border-primary/40 hover:bg-primary/10"
               >
-                <Building2 className="h-3.5 w-3.5 mr-1 text-primary" />
-                ল্যাব সেন্টার
+                <Building2 className="h-3.5 w-3.5 mr-1 text-primary hidden xs:inline" />
+                সেন্টার
               </Button>
 
               <Button
                 onClick={handleCheckout}
-                className="font-extrabold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-lg h-10 px-5 text-xs sm:text-sm rounded-xl"
+                className="font-extrabold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-lg h-9 sm:h-10 px-3 sm:px-5 text-xs sm:text-sm rounded-xl"
               >
-                <ShoppingCart className="h-4 w-4 mr-1.5" />
+                <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
                 বুকিং সম্পন্ন করুন
               </Button>
             </div>
