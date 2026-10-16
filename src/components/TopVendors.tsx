@@ -18,19 +18,27 @@ const TopVendors = () => {
   const { data: vendors = [] } = useQuery({
     queryKey: ["homepage-vendors"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("id, store_name, logo_url")
-        .eq("status", "approved")
-        .order("total_earnings", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(VENDORS_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data, error } = await supabase
+          .from("vendors")
+          .select("id, store_name, logo_url")
+          .eq("status", "approved")
+          .order("total_earnings", { ascending: false })
+          .limit(20);
+        if (error) {
+          console.error("Error fetching vendors:", error);
+          return [];
+        }
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(VENDORS_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      } catch {
+        // network abort or timeout
       }
-      return data || [];
+      return [];
     },
     initialData: () => {
       try {
@@ -39,6 +47,7 @@ const TopVendors = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 

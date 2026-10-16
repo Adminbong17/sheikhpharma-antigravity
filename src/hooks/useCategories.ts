@@ -38,17 +38,25 @@ export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("sort_order");
-      if (error) throw error;
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("*")
+          .order("sort_order");
+        if (error) {
+          console.error("Error fetching categories:", error);
+          return DEFAULT_CATEGORIES;
+        }
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data as DBCategory[];
+        }
+      } catch {
+        // network abort or timeout
       }
-      return (data as DBCategory[]) || [];
+      return DEFAULT_CATEGORIES;
     },
     initialData: () => {
       try {
@@ -57,6 +65,7 @@ export const useCategories = () => {
       } catch {}
       return DEFAULT_CATEGORIES;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 };

@@ -29,20 +29,25 @@ const HomepageSections = () => {
   const PRODUCTS_STORAGE_KEY = "sheikhpharma_home_section_products";
   const BANNERS_STORAGE_KEY = "sheikhpharma_home_section_banners";
 
-  const { data: sections = [], isLoading } = useQuery({
+  const { data: sections = [] } = useQuery({
     queryKey: ["homepage-sections"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("homepage_sections")
-        .select("id, title, section_type, sort_order, is_active")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data } = await supabase
+          .from("homepage_sections")
+          .select("id, title, section_type, sort_order, is_active")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      } catch {
+        // network abort or failure
       }
-      return data || [];
+      return [];
     },
     initialData: () => {
       try {
@@ -51,31 +56,37 @@ const HomepageSections = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: sectionProducts = {} } = useQuery({
     queryKey: ["homepage-section-products"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("homepage_section_products")
-        .select(
-          "section_id, product_id, sort_order, products(id, name, slug, image_url, price, price_unit, original_price, rating, sold_count, is_qmall_verified, stock, is_preorder, preorder_count)"
-        )
-        .order("sort_order", { ascending: true });
-      const grouped: Record<string, any[]> = {};
-      (data || []).forEach((sp: any) => {
-        if (sp.products) {
-          if (!grouped[sp.section_id]) grouped[sp.section_id] = [];
-          grouped[sp.section_id].push(sp);
+      try {
+        const { data } = await supabase
+          .from("homepage_section_products")
+          .select(
+            "section_id, product_id, sort_order, products(id, name, slug, image_url, price, price_unit, original_price, rating, sold_count, is_qmall_verified, stock, is_preorder, preorder_count)"
+          )
+          .order("sort_order", { ascending: true });
+        const grouped: Record<string, any[]> = {};
+        (data || []).forEach((sp: any) => {
+          if (sp.products) {
+            if (!grouped[sp.section_id]) grouped[sp.section_id] = [];
+            grouped[sp.section_id].push(sp);
+          }
+        });
+        if (Object.keys(grouped).length > 0) {
+          try {
+            localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(grouped));
+          } catch {}
         }
-      });
-      if (Object.keys(grouped).length > 0) {
-        try {
-          localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(grouped));
-        } catch {}
+        return grouped;
+      } catch {
+        // network abort or failure
       }
-      return grouped;
+      return {};
     },
     initialData: () => {
       try {
@@ -84,27 +95,33 @@ const HomepageSections = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: sectionBanners = {} } = useQuery({
     queryKey: ["section-banners"],
     queryFn: async () => {
-      const { data } = await (supabase
-        .from("section_banners" as any)
-        .select("id, image_url, link_url, after_section_id, is_active")
-        .eq("is_active", true) as any);
-      const grouped: Record<string, any[]> = {};
-      (data || []).forEach((b: any) => {
-        if (!grouped[b.after_section_id]) grouped[b.after_section_id] = [];
-        grouped[b.after_section_id].push(b);
-      });
-      if (Object.keys(grouped).length > 0) {
-        try {
-          localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(grouped));
-        } catch {}
+      try {
+        const { data } = await (supabase
+          .from("section_banners" as any)
+          .select("id, image_url, link_url, after_section_id, is_active")
+          .eq("is_active", true) as any);
+        const grouped: Record<string, any[]> = {};
+        (data || []).forEach((b: any) => {
+          if (!grouped[b.after_section_id]) grouped[b.after_section_id] = [];
+          grouped[b.after_section_id].push(b);
+        });
+        if (Object.keys(grouped).length > 0) {
+          try {
+            localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(grouped));
+          } catch {}
+        }
+        return grouped;
+      } catch {
+        // network abort or failure
       }
-      return grouped;
+      return {};
     },
     initialData: () => {
       try {
@@ -113,23 +130,9 @@ const HomepageSections = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 10,
   });
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 space-y-8">
-        {[1, 2].map((i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-8 w-48" />
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-              {[1, 2, 3, 4, 5].map((j) => <Skeleton key={j} className="h-64 rounded-lg" />)}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   if (sections.length === 0) return null;
 

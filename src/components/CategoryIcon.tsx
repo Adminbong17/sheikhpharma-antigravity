@@ -666,14 +666,14 @@ export interface CategoryIconProps {
   iconClassName?: string;
 }
 
+import { Pill, Stethoscope, Heart, Package, Activity, Droplets, Sparkles } from "lucide-react";
+
+const commonLucideIcons: Record<string, React.ComponentType<any>> = {
+  Pill, Stethoscope, Heart, Package, Activity, Droplets, Sparkles
+};
+
 const DynamicLucideIcon = ({ iconName, className }: { iconName: string; className?: string }) => {
-  const [Icon, setIcon] = useState<any>(null);
-  useEffect(() => {
-    import("lucide-react").then((mod: any) => {
-      setIcon(() => mod[iconName] || null);
-    });
-  }, [iconName]);
-  if (!Icon) return null;
+  const Icon = commonLucideIcons[iconName] || Pill;
   return <Icon className={className} />;
 };
 

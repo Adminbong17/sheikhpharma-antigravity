@@ -13,31 +13,50 @@ const HeroBanner = () => {
   const touchEndX = useRef<number>(0);
 
   const HERO_STORAGE_KEY = "sheikhpharma_hero_slides";
-  const { data: slides = [], isLoading } = useQuery({
+  const DEFAULT_SLIDES = [
+    {
+      id: "default-slide-1",
+      title: "অরিজিনাল ওষুধ, দ্রুত হোম ডেলিভারি",
+      subtitle: "মডেল ফার্মেসি সেবা এখন আপনার হাতের মুঠোয়",
+      image_url: null,
+      link_url: "/prescription",
+      sort_order: 1,
+      is_active: true,
+    },
+  ];
+
+  const { data: slides = [] } = useQuery({
     queryKey: ["hero-slides"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hero_slides")
-        .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) {
-        console.error("Error fetching hero slides:", error);
+      try {
+        const { data, error } = await supabase
+          .from("hero_slides")
+          .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (error) {
+          console.error("Error fetching hero slides:", error);
+          return DEFAULT_SLIDES;
+        }
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      } catch {
+        // network abort or failure
       }
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
-      }
-      return data || [];
+      return DEFAULT_SLIDES;
     },
     initialData: () => {
       try {
         const cached = localStorage.getItem(HERO_STORAGE_KEY);
         if (cached) return JSON.parse(cached);
       } catch {}
-      return undefined;
+      return DEFAULT_SLIDES;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 
@@ -93,14 +112,7 @@ const HeroBanner = () => {
     touchEndX.current = 0;
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full">
-        <Skeleton className="w-full rounded-xl sm:rounded-2xl aspect-[1000/432]" />
-      </div>
-    );
-  }
-
+  // Never block the user with a blank skeleton if backend is slow
   if (slides.length === 0) {
     return (
       <div className="w-full">

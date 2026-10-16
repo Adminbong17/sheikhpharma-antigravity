@@ -19,22 +19,30 @@ const BrandCarousel = () => {
   const { data: brands = [] } = useQuery({
     queryKey: ["homepage-brands"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, name, logo_url")
-        .eq("status", "approved")
-        .eq("is_active", true)
-        .not("logo_url", "is", null)
-        .order("name")
-        .limit(24);
-      if (error) throw error;
-      const filtered = (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
-      if (filtered.length > 0) {
-        try {
-          localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(filtered));
-        } catch {}
+      try {
+        const { data, error } = await supabase
+          .from("brands")
+          .select("id, name, logo_url")
+          .eq("status", "approved")
+          .eq("is_active", true)
+          .not("logo_url", "is", null)
+          .order("name")
+          .limit(24);
+        if (error) {
+          console.error("Error fetching brands:", error);
+          return [];
+        }
+        const filtered = (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
+        if (filtered.length > 0) {
+          try {
+            localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(filtered));
+          } catch {}
+        }
+        return filtered;
+      } catch {
+        // network abort or timeout
       }
-      return filtered;
+      return [];
     },
     initialData: () => {
       try {
@@ -43,6 +51,7 @@ const BrandCarousel = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 

@@ -73,18 +73,26 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
   const { data: items = [] } = useQuery({
     queryKey: ["homepage-left-menu"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("homepage_left_menu_items")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data, error } = await supabase
+          .from("homepage_left_menu_items")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (error) {
+          console.error("Error fetching left menu items:", error);
+          return [];
+        }
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data as MenuItem[];
+        }
+      } catch {
+        // network abort or timeout
       }
-      return (data || []) as MenuItem[];
+      return [];
     },
     initialData: () => {
       try {
@@ -93,6 +101,7 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 

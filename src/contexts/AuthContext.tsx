@@ -74,9 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<any>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null } }), 2500)
+        );
+
         const {
           data: { session: storedSession },
-        } = await supabase.auth.getSession();
+        } = await Promise.race([sessionPromise, timeoutPromise]);
 
         let nextSession = storedSession;
         const isExpired = nextSession?.expires_at
@@ -84,11 +89,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           : false;
 
         if (isExpired) {
-          const { data, error } = await supabase.auth.refreshSession();
+          const refreshPromise = supabase.auth.refreshSession();
+          const refreshTimeout = new Promise<any>((resolve) =>
+            setTimeout(() => resolve({ data: { session: null }, error: new Error("Timeout") }), 2000)
+          );
+          const { data, error } = await Promise.race([refreshPromise, refreshTimeout]);
 
           if (error) {
             console.error("refreshSession error:", error.message);
-            await supabase.auth.signOut({ scope: "local" });
+            await supabase.auth.signOut({ scope: "local" }).catch(() => {});
             nextSession = null;
           } else {
             nextSession = data.session;

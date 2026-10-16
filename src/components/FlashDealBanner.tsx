@@ -11,20 +11,25 @@ const FlashDealBanner = () => {
   const { data: activeDeal } = useQuery({
     queryKey: ["active-flash-deal"],
     queryFn: async () => {
-      const { data } = await (supabase
-        .from("flash_deals" as any)
-        .select("*")
-        .eq("is_active", true)
-        .gt("end_time", new Date().toISOString())
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single() as any);
-      if (data) {
-        try {
-          localStorage.setItem(FLASH_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data } = await (supabase
+          .from("flash_deals" as any)
+          .select("*")
+          .eq("is_active", true)
+          .gt("end_time", new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single() as any);
+        if (data) {
+          try {
+            localStorage.setItem(FLASH_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      } catch {
+        // network abort or timeout
       }
-      return data;
+      return null;
     },
     initialData: () => {
       try {
@@ -36,6 +41,7 @@ const FlashDealBanner = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     refetchInterval: 60000,
   });
 

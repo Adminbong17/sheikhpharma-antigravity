@@ -41,18 +41,26 @@ export const useSiteSettings = () => {
   return useQuery({
     queryKey: ["site-settings"],
     queryFn: async (): Promise<SiteSettings> => {
-      const { data, error } = await supabase
-        .from("site_settings" as any)
-        .select("*")
-        .limit(1)
-        .single();
-      if (error) throw error;
-      if (data) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data, error } = await supabase
+          .from("site_settings" as any)
+          .select("*")
+          .limit(1)
+          .single();
+        if (error) {
+          console.error("Error fetching site settings:", error);
+          return DEFAULT_SETTINGS;
+        }
+        if (data) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data as any;
+        }
+      } catch {
+        // network abort or timeout
       }
-      return data as any;
+      return DEFAULT_SETTINGS;
     },
     initialData: () => {
       try {
@@ -61,6 +69,7 @@ export const useSiteSettings = () => {
       } catch {}
       return DEFAULT_SETTINGS;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 15,
   });
 };

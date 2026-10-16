@@ -20,17 +20,25 @@ const Footer = () => {
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ["payment-methods-footer"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("payment_methods" as any) as any)
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      if (data && data.length > 0) {
-        try {
-          localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(data));
-        } catch {}
+      try {
+        const { data, error } = await (supabase.from("payment_methods" as any) as any)
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order");
+        if (error) {
+          console.error("Error fetching payment methods:", error);
+          return [];
+        }
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data as PaymentMethod[];
+        }
+      } catch {
+        // network abort or timeout
       }
-      return data as PaymentMethod[];
+      return [];
     },
     initialData: () => {
       try {
@@ -39,6 +47,7 @@ const Footer = () => {
       } catch {}
       return undefined;
     },
+    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 
