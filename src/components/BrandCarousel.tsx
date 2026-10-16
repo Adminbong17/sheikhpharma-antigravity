@@ -12,46 +12,22 @@ const CARD_COLORS = [
   "border-indigo-500", "border-cyan-500",
 ];
 
-const BRANDS_STORAGE_KEY = "sheikhpharma_home_brands";
-
 const BrandCarousel = () => {
   const { b } = useLanguage();
   const { data: brands = [] } = useQuery({
     queryKey: ["homepage-brands"],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("brands")
-          .select("id, name, logo_url")
-          .eq("status", "approved")
-          .eq("is_active", true)
-          .not("logo_url", "is", null)
-          .order("name")
-          .limit(24);
-        if (error) {
-          console.error("Error fetching brands:", error);
-          return [];
-        }
-        const filtered = (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
-        if (filtered.length > 0) {
-          try {
-            localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(filtered));
-          } catch {}
-        }
-        return filtered;
-      } catch {
-        // network abort or timeout
-      }
-      return [];
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id, name, logo_url")
+        .eq("status", "approved")
+        .eq("is_active", true)
+        .not("logo_url", "is", null)
+        .order("name")
+        .limit(24);
+      if (error) throw error;
+      return (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
     },
-    initialData: () => {
-      try {
-        const cached = localStorage.getItem(BRANDS_STORAGE_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch {}
-      return undefined;
-    },
-    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 

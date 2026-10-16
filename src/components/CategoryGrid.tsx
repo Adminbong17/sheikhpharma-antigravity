@@ -17,6 +17,19 @@ const CategoryGrid = () => {
   const visibleCount = isMobile ? 12 : 16;
   const visibleCategories = categories.slice(0, visibleCount);
 
+  if (isLoading) {
+    return (
+      <section className="container mx-auto px-4 py-6">
+        <h2 className="mb-4 text-xl font-bold">{b("ক্যাটাগরি", "Categories")}</h2>
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 sm:gap-3.5 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-12">
+          {[...Array(12)].map((_, i) => (
+            <Skeleton key={i} className="h-28 sm:h-32 rounded-2xl" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   if (categories.length === 0) return null;
 
   return (

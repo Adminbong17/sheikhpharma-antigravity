@@ -15,6 +15,12 @@ if ("serviceWorker" in navigator) {
     })
     .catch(() => {});
 }
+if ("caches" in window) {
+  caches
+    .keys()
+    .then((keys) => keys.forEach((k) => caches.delete(k)))
+    .catch(() => {});
+}
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>

@@ -1,54 +1,46 @@
 import { useState, useMemo } from "react";
-import {
-  Smile, Search,
-  Smartphone, Laptop, Tablet, Headphones, Camera, Watch, Tv, Speaker,
-  Shirt, ShoppingBag, Gem, Glasses,
-  Home, Sofa, Lamp, CookingPot, Bath, Bed,
-  Apple, Beef, Coffee, IceCream, Milk, Salad, Pizza, Cake,
-  Heart, Sparkles, Droplets, Scissors, Palette,
-  Gamepad2, Puzzle, Dice5, ToyBrick,
-  Dumbbell, Bike, Trophy, Medal,
-  Car, Fuel, Wrench, CircleGauge,
-  Baby, Dog, Cat, Bird, Fish,
-  Book, BookOpen, GraduationCap, Pen, Newspaper,
-  Plane, MapPin, Tent, Mountain,
-  Gift, PartyPopper, Music, Clapperboard,
-  Stethoscope, Pill, Syringe, Activity,
-  Flower2, TreePine, Leaf, Sun, CloudRain,
-  ShieldCheck, Lock, Key, Zap, Flame,
-  Package, Box, Truck, Store, ShoppingCart,
-  FolderOpen, Grid3X3, LayoutGrid, Layers, Tag
-} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-// Build a clean map of curated icons
-const iconMap: Record<string, React.ComponentType<any>> = {
-  Smartphone, Laptop, Tablet, Headphones, Camera, Watch, Tv, Speaker,
-  Shirt, ShoppingBag, Gem, Glasses,
-  Home, Sofa, Lamp, CookingPot, Bath, Bed,
-  Apple, Beef, Coffee, IceCream, Milk, Salad, Pizza, Cake,
-  Heart, Sparkles, Droplets, Scissors, Palette,
-  Gamepad2, Puzzle, Dice5, ToyBrick,
-  Dumbbell, Bike, Trophy, Medal,
-  Car, Fuel, Wrench, CircleGauge,
-  Baby, Dog, Cat, Bird, Fish,
-  Book, BookOpen, GraduationCap, Pen, Newspaper,
-  Plane, MapPin, Tent, Mountain,
-  Gift, PartyPopper, Music, Clapperboard,
-  Stethoscope, Pill, Syringe, Activity,
-  Flower2, TreePine, Leaf, Sun, CloudRain,
-  ShieldCheck, Lock, Key, Zap, Flame,
-  Package, Box, Truck, Store, ShoppingCart,
-  FolderOpen, Grid3X3, LayoutGrid, Layers, Tag,
-  Smile, Search,
-};
-
+// Build a clean map of icon name -> component
+const iconMap: Record<string, React.ComponentType<any>> = {};
+const SKIP = new Set(["createLucideIcon", "default", "Icon", "icons", "dynamicIconImports"]);
+for (const [key, val] of Object.entries(LucideIcons)) {
+  if (
+    !SKIP.has(key) &&
+    key[0] === key[0].toUpperCase() &&
+    val != null &&
+    (typeof val === "function" || (typeof val === "object" && "$$typeof" in (val as any)))
+  ) {
+    iconMap[key] = val as React.ComponentType<any>;
+  }
+}
 const ALL_ICON_NAMES = Object.keys(iconMap).sort();
-const POPULAR_ICONS = ALL_ICON_NAMES;
+
+// Curated popular icons shown by default
+const POPULAR_ICONS = [
+  "Smartphone", "Laptop", "Tablet", "Headphones", "Camera", "Watch", "Tv", "Speaker",
+  "Shirt", "ShoppingBag", "Gem", "Glasses",
+  "Home", "Sofa", "Lamp", "CookingPot", "Bath", "Bed",
+  "Apple", "Beef", "Coffee", "IceCream", "Milk", "Salad", "Pizza", "Cake",
+  "Heart", "Sparkles", "Droplets", "Scissors", "Palette",
+  "Gamepad2", "Puzzle", "Dice5", "ToyBrick",
+  "Dumbbell", "Bike", "Trophy", "Medal",
+  "Car", "Fuel", "Wrench", "CircleGauge",
+  "Baby", "Dog", "Cat", "Bird", "Fish",
+  "Book", "BookOpen", "GraduationCap", "Pen", "Newspaper",
+  "Plane", "MapPin", "Tent", "Mountain",
+  "Gift", "PartyPopper", "Music", "Clapperboard",
+  "Stethoscope", "Pill", "Syringe", "Activity",
+  "Flower2", "TreePine", "Leaf", "Sun", "CloudRain",
+  "ShieldCheck", "Lock", "Key", "Zap", "Flame",
+  "Package", "Box", "Truck", "Store", "ShoppingCart",
+  "FolderOpen", "Grid3X3", "LayoutGrid", "Layers", "Tag",
+].filter((n) => iconMap[n]);
 
 interface IconPickerProps {
   value: string | null;
@@ -78,7 +70,7 @@ const IconPicker = ({ value, onChange }: IconPickerProps) => {
             </>
           ) : (
             <>
-              <Smile className="h-5 w-5 text-muted-foreground" />
+              <LucideIcons.Smile className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Pick an icon...</span>
             </>
           )}
@@ -87,7 +79,7 @@ const IconPicker = ({ value, onChange }: IconPickerProps) => {
       <PopoverContent className="w-[340px] p-0" align="start">
         <div className="p-3 border-b">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <LucideIcons.Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search icons..."
               value={search}

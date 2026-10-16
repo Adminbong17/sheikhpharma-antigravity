@@ -11,43 +11,20 @@ const CARD_COLORS = [
   "border-indigo-500", "border-cyan-500",
 ];
 
-const VENDORS_STORAGE_KEY = "sheikhpharma_home_vendors";
-
 const TopVendors = () => {
   const { b } = useLanguage();
   const { data: vendors = [] } = useQuery({
     queryKey: ["homepage-vendors"],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("vendors")
-          .select("id, store_name, logo_url")
-          .eq("status", "approved")
-          .order("total_earnings", { ascending: false })
-          .limit(20);
-        if (error) {
-          console.error("Error fetching vendors:", error);
-          return [];
-        }
-        if (data && data.length > 0) {
-          try {
-            localStorage.setItem(VENDORS_STORAGE_KEY, JSON.stringify(data));
-          } catch {}
-          return data;
-        }
-      } catch {
-        // network abort or timeout
-      }
-      return [];
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, store_name, logo_url")
+        .eq("status", "approved")
+        .order("total_earnings", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
     },
-    initialData: () => {
-      try {
-        const cached = localStorage.getItem(VENDORS_STORAGE_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch {}
-      return undefined;
-    },
-    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 

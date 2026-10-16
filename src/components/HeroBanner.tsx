@@ -12,51 +12,19 @@ const HeroBanner = () => {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  const HERO_STORAGE_KEY = "sheikhpharma_hero_slides";
-  const DEFAULT_SLIDES = [
-    {
-      id: "default-slide-1",
-      title: "অরিজিনাল ওষুধ, দ্রুত হোম ডেলিভারি",
-      subtitle: "মডেল ফার্মেসি সেবা এখন আপনার হাতের মুঠোয়",
-      image_url: null,
-      link_url: "/prescription",
-      sort_order: 1,
-      is_active: true,
-    },
-  ];
-
-  const { data: slides = [] } = useQuery({
+  const { data: slides = [], isLoading } = useQuery({
     queryKey: ["hero-slides"],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("hero_slides")
-          .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
-        if (error) {
-          console.error("Error fetching hero slides:", error);
-          return DEFAULT_SLIDES;
-        }
-        if (data && data.length > 0) {
-          try {
-            localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(data));
-          } catch {}
-          return data;
-        }
-      } catch {
-        // network abort or failure
+      const { data, error } = await supabase
+        .from("hero_slides")
+        .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) {
+        console.error("Error fetching hero slides:", error);
       }
-      return DEFAULT_SLIDES;
+      return data || [];
     },
-    initialData: () => {
-      try {
-        const cached = localStorage.getItem(HERO_STORAGE_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch {}
-      return DEFAULT_SLIDES;
-    },
-    initialDataUpdatedAt: () => Date.now(),
     staleTime: 1000 * 60 * 30,
   });
 
@@ -112,7 +80,14 @@ const HeroBanner = () => {
     touchEndX.current = 0;
   };
 
-  // Never block the user with a blank skeleton if backend is slow
+  if (isLoading) {
+    return (
+      <div className="w-full">
+        <Skeleton className="w-full rounded-xl sm:rounded-2xl aspect-[1000/432]" />
+      </div>
+    );
+  }
+
   if (slides.length === 0) {
     return (
       <div className="w-full">
@@ -168,8 +143,6 @@ const HeroBanner = () => {
                 alt={s.title || "Poster"}
                 className="w-full h-full object-contain sm:object-cover pointer-events-none select-none transition-all duration-300"
                 loading={idx === 0 ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={idx === 0 ? "high" : "low"}
                 draggable={false}
               />
               {(s.title || s.subtitle) && (

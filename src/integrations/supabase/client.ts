@@ -9,27 +9,10 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Custom fetch wrapper with 4000ms timeout to prevent hanging connections
-const fetchWithTimeout: typeof fetch = (input, init) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-  if (init?.signal) {
-    init.signal.addEventListener("abort", () => controller.abort());
-  }
-
-  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
-    clearTimeout(timeoutId);
-  });
-};
-
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: brokeredPreviewStorage(),
     persistSession: true,
     autoRefreshToken: true,
-  },
-  global: {
-    fetch: fetchWithTimeout,
-  },
+  }
 });

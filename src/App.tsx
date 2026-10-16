@@ -16,8 +16,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import PageLoading from "@/components/PageLoading";
 
-// Eagerly load primary storefront Index to eliminate landing page waterfall delay
-import Index from "./pages/Index";
+// Public Storefront Pages (Lazy-loaded for maximum performance)
+const Index = lazy(() => import("./pages/Index"));
 
 // Lazy-loaded layouts
 const AdminLayout = lazy(() => import("@/components/AdminLayout"));
@@ -183,14 +183,14 @@ const SiteColorApplier = () => {
   return null;
 };
 
-// Optimized QueryClient with sensible caching and no cascading retry freezes
+// Optimized QueryClient with sensible caching to avoid constant refetches
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes data freshness
-      gcTime: 1000 * 60 * 20,   // 20 minutes cache memory
+      staleTime: 1000 * 60 * 3, // 3 minutes data freshness
+      gcTime: 1000 * 60 * 15,   // 15 minutes cache memory
       refetchOnWindowFocus: false, // Prevents sudden network spikes on tab focus
-      retry: false, // Prevents cascading freezes if backend is timing out
+      retry: 1,
     },
   },
 });

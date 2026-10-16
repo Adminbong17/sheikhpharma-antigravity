@@ -16,39 +16,17 @@ const Footer = () => {
   const siteName = siteSettings?.site_name || "Sheikh Pharma";
   const { t, b } = useLanguage();
 
-  const PM_STORAGE_KEY = "sheikhpharma_payment_methods";
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ["payment-methods-footer"],
     queryFn: async () => {
-      try {
-        const { data, error } = await (supabase.from("payment_methods" as any) as any)
-          .select("*")
-          .eq("is_active", true)
-          .order("sort_order");
-        if (error) {
-          console.error("Error fetching payment methods:", error);
-          return [];
-        }
-        if (data && data.length > 0) {
-          try {
-            localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(data));
-          } catch {}
-          return data as PaymentMethod[];
-        }
-      } catch {
-        // network abort or timeout
-      }
-      return [];
+      const { data, error } = await (supabase.from("payment_methods" as any) as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data as PaymentMethod[];
     },
-    initialData: () => {
-      try {
-        const cached = localStorage.getItem(PM_STORAGE_KEY);
-        if (cached) return JSON.parse(cached);
-      } catch {}
-      return undefined;
-    },
-    initialDataUpdatedAt: () => Date.now(),
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 5,
   });
 
   return (
