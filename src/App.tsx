@@ -16,8 +16,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import PageLoading from "@/components/PageLoading";
 
-// Public Storefront Pages (Lazy-loaded for maximum performance)
-const Index = lazy(() => import("./pages/Index"));
+// Eagerly load primary storefront Index to eliminate landing page waterfall delay
+import Index from "./pages/Index";
 
 // Lazy-loaded layouts
 const AdminLayout = lazy(() => import("@/components/AdminLayout"));

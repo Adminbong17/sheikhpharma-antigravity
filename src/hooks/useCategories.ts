@@ -17,6 +17,23 @@ export interface DBSubCategory {
   sort_order: number;
 }
 
+const DEFAULT_CATEGORIES: DBCategory[] = [
+  { id: "cat-medicine", name: "Medicine", slug: "medicine", icon_url: null, sort_order: 1 },
+  { id: "cat-healthcare", name: "Healthcare", slug: "healthcare", icon_url: null, sort_order: 2 },
+  { id: "cat-baby-care", name: "Baby & Mom care", slug: "baby-and-mom-care", icon_url: null, sort_order: 3 },
+  { id: "cat-sexual-wellness", name: "Sexual Wellness", slug: "sexual-wellness", icon_url: null, sort_order: 4 },
+  { id: "cat-beauty", name: "Beauty & Skin", slug: "beauty", icon_url: null, sort_order: 5 },
+  { id: "cat-herbal", name: "Herbal & Ayur", slug: "herbal", icon_url: null, sort_order: 6 },
+  { id: "cat-home-care", name: "Home care", slug: "home-care", icon_url: null, sort_order: 7 },
+  { id: "cat-devices", name: "Medical Devices", slug: "medical-devices", icon_url: null, sort_order: 8 },
+  { id: "cat-nutrition", name: "Food & Nutrition", slug: "food-and-nutrition", icon_url: null, sort_order: 9 },
+  { id: "cat-supplements", name: "Supplements", slug: "supplements", icon_url: null, sort_order: 10 },
+  { id: "cat-personal-care", name: "Personal Care", slug: "personal-care", icon_url: null, sort_order: 11 },
+  { id: "cat-dental", name: "Dental & Oral Care", slug: "dental-care", icon_url: null, sort_order: 12 },
+];
+
+const CAT_STORAGE_KEY = "sheikhpharma_categories";
+
 export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],
@@ -26,7 +43,19 @@ export const useCategories = () => {
         .select("*")
         .order("sort_order");
       if (error) throw error;
+      if (data && data.length > 0) {
+        try {
+          localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return (data as DBCategory[]) || [];
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(CAT_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return DEFAULT_CATEGORIES;
     },
     staleTime: 1000 * 60 * 30,
   });

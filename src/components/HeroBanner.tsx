@@ -12,6 +12,7 @@ const HeroBanner = () => {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
+  const HERO_STORAGE_KEY = "sheikhpharma_hero_slides";
   const { data: slides = [], isLoading } = useQuery({
     queryKey: ["hero-slides"],
     queryFn: async () => {
@@ -23,7 +24,19 @@ const HeroBanner = () => {
       if (error) {
         console.error("Error fetching hero slides:", error);
       }
+      if (data && data.length > 0) {
+        try {
+          localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return data || [];
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(HERO_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 30,
   });
@@ -143,6 +156,8 @@ const HeroBanner = () => {
                 alt={s.title || "Poster"}
                 className="w-full h-full object-contain sm:object-cover pointer-events-none select-none transition-all duration-300"
                 loading={idx === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={idx === 0 ? "high" : "low"}
                 draggable={false}
               />
               {(s.title || s.subtitle) && (

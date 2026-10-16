@@ -18,6 +18,25 @@ export interface SiteSettings {
   updated_at: string;
 }
 
+const DEFAULT_SETTINGS: SiteSettings = {
+  id: "default",
+  site_name: "শেখ ফার্মা",
+  site_title: "Sheikh Pharma — Online Medicine Shop & Model Pharmacy in BD",
+  logo_url: null,
+  favicon_url: null,
+  primary_color: "231 72% 56%",
+  background_color: null,
+  foreground_color: null,
+  card_color: null,
+  accent_color: "160 84% 39%",
+  border_color: null,
+  muted_color: null,
+  is_multivendor: true,
+  updated_at: "",
+};
+
+const STORAGE_KEY = "sheikhpharma_site_settings";
+
 export const useSiteSettings = () => {
   return useQuery({
     queryKey: ["site-settings"],
@@ -28,8 +47,20 @@ export const useSiteSettings = () => {
         .limit(1)
         .single();
       if (error) throw error;
+      if (data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return data as any;
     },
-    staleTime: 1000 * 60 * 5,
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return DEFAULT_SETTINGS;
+    },
+    staleTime: 1000 * 60 * 15,
   });
 };

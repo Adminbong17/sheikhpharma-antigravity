@@ -25,6 +25,10 @@ const HomepageSections = () => {
   const isMobile = useIsMobile();
   const { b, formatNumber } = useLanguage();
 
+  const SECTIONS_STORAGE_KEY = "sheikhpharma_home_sections";
+  const PRODUCTS_STORAGE_KEY = "sheikhpharma_home_section_products";
+  const BANNERS_STORAGE_KEY = "sheikhpharma_home_section_banners";
+
   const { data: sections = [], isLoading } = useQuery({
     queryKey: ["homepage-sections"],
     queryFn: async () => {
@@ -33,7 +37,19 @@ const HomepageSections = () => {
         .select("id, title, section_type, sort_order, is_active")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      if (data && data.length > 0) {
+        try {
+          localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return data || [];
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(SECTIONS_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 10,
   });
@@ -41,7 +57,7 @@ const HomepageSections = () => {
   const { data: sectionProducts = {} } = useQuery({
     queryKey: ["homepage-section-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("homepage_section_products")
         .select(
           "section_id, product_id, sort_order, products(id, name, slug, image_url, price, price_unit, original_price, rating, sold_count, is_qmall_verified, stock, is_preorder, preorder_count)"
@@ -54,7 +70,19 @@ const HomepageSections = () => {
           grouped[sp.section_id].push(sp);
         }
       });
+      if (Object.keys(grouped).length > 0) {
+        try {
+          localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(grouped));
+        } catch {}
+      }
       return grouped;
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 10,
   });
@@ -71,7 +99,19 @@ const HomepageSections = () => {
         if (!grouped[b.after_section_id]) grouped[b.after_section_id] = [];
         grouped[b.after_section_id].push(b);
       });
+      if (Object.keys(grouped).length > 0) {
+        try {
+          localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(grouped));
+        } catch {}
+      }
       return grouped;
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(BANNERS_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 10,
   });
@@ -155,6 +195,7 @@ const HomepageSections = () => {
                               p.stock <= 0 && !isEffectivePreorder(p) ? "opacity-50 grayscale" : ""
                             }`}
                             loading="lazy"
+                            decoding="async"
                           />
                           {discount > 0 && (
                             <Badge className="absolute left-1.5 top-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5">

@@ -16,6 +16,7 @@ const Footer = () => {
   const siteName = siteSettings?.site_name || "Sheikh Pharma";
   const { t, b } = useLanguage();
 
+  const PM_STORAGE_KEY = "sheikhpharma_payment_methods";
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ["payment-methods-footer"],
     queryFn: async () => {
@@ -24,9 +25,21 @@ const Footer = () => {
         .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
+      if (data && data.length > 0) {
+        try {
+          localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return data as PaymentMethod[];
     },
-    staleTime: 1000 * 60 * 5,
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(PM_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
+    },
+    staleTime: 1000 * 60 * 30,
   });
 
   return (

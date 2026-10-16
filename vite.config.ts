@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes("IconPicker")) {
+            return "admin-icon-picker";
+          }
           if (id.includes("node_modules")) {
             if (id.includes("xlsx")) return "vendor-xlsx";
             if (id.includes("html2canvas")) return "vendor-canvas";

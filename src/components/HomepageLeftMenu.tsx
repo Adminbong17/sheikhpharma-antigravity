@@ -67,6 +67,8 @@ const MobileInner = ({ it }: { it: MenuItem }) => (
 
 type Variant = "desktop" | "mobile" | "desktop-left" | "desktop-right";
 
+const MENU_STORAGE_KEY = "sheikhpharma_left_menu_items";
+
 const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
   const { data: items = [] } = useQuery({
     queryKey: ["homepage-left-menu"],
@@ -77,8 +79,21 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
+      if (data && data.length > 0) {
+        try {
+          localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return (data || []) as MenuItem[];
     },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(MENU_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
+    },
+    staleTime: 1000 * 60 * 30,
   });
 
   const isMobile = variant === "mobile";

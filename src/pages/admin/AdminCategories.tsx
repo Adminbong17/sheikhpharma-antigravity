@@ -12,9 +12,10 @@ import { Plus, Pencil, Trash2, Upload, Image as ImageIcon, FolderTree, Search, T
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { logActivity } from "@/lib/logActivity";
+import { lazy, Suspense } from "react";
 import PrintExportButtons from "@/components/PrintExportButtons";
 import type { PrintColumn } from "@/lib/printExport";
-import IconPicker from "@/components/IconPicker";
+const IconPicker = lazy(() => import("@/components/IconPicker"));
 import CategoryIcon from "@/components/CategoryIcon";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -303,7 +304,9 @@ const AdminCategories = () => {
                     </Button>
                   </div>
                   {iconMode === "lucide" ? (
-                    <IconPicker value={selectedLucideIcon} onChange={setSelectedLucideIcon} />
+                    <Suspense fallback={<div className="h-10 flex items-center justify-center text-xs text-muted-foreground">আইকন লোড হচ্ছে...</div>}>
+                      <IconPicker value={selectedLucideIcon} onChange={setSelectedLucideIcon} />
+                    </Suspense>
                   ) : (
                     <>
                       <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-input px-4 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors">

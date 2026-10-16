@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Clock, ChevronRight } from "lucide-react";
 
+const FLASH_STORAGE_KEY = "sheikhpharma_flash_deal";
+
 const FlashDealBanner = () => {
   const { data: activeDeal } = useQuery({
     queryKey: ["active-flash-deal"],
@@ -17,7 +19,22 @@ const FlashDealBanner = () => {
         .order("created_at", { ascending: false })
         .limit(1)
         .single() as any);
+      if (data) {
+        try {
+          localStorage.setItem(FLASH_STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+      }
       return data;
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(FLASH_STORAGE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (new Date(parsed.end_time).getTime() > Date.now()) return parsed;
+        }
+      } catch {}
+      return undefined;
     },
     refetchInterval: 60000,
   });

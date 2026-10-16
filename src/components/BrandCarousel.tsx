@@ -12,6 +12,8 @@ const CARD_COLORS = [
   "border-indigo-500", "border-cyan-500",
 ];
 
+const BRANDS_STORAGE_KEY = "sheikhpharma_home_brands";
+
 const BrandCarousel = () => {
   const { b } = useLanguage();
   const { data: brands = [] } = useQuery({
@@ -26,7 +28,20 @@ const BrandCarousel = () => {
         .order("name")
         .limit(24);
       if (error) throw error;
-      return (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
+      const filtered = (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
+      if (filtered.length > 0) {
+        try {
+          localStorage.setItem(BRANDS_STORAGE_KEY, JSON.stringify(filtered));
+        } catch {}
+      }
+      return filtered;
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem(BRANDS_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 30,
   });
