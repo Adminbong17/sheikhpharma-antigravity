@@ -1,12 +1,21 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search,
@@ -19,6 +28,21 @@ import {
   ChevronRight,
   Building2,
   Phone,
+  MessageCircle,
+  Upload,
+  Clock,
+  ShieldCheck,
+  Sparkles,
+  HeartPulse,
+  Activity,
+  FileText,
+  Calendar,
+  X,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+  BadgePercent,
+  CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import BackButton from "@/components/BackButton";
@@ -58,8 +82,79 @@ interface CenterTestAssignment {
   govt_price: number;
 }
 
+// Curated high-converting preventive health packages
+interface HealthPackage {
+  id: string;
+  title: string;
+  title_bn: string;
+  subtitle: string;
+  badge: string;
+  regularPrice: number;
+  offerPrice: number;
+  reportTime: string;
+  sampleType: string;
+  includedKeywords: string[]; // matching keywords to look up actual tests
+  highlights: string[];
+}
+
+const HEALTH_PACKAGES: HealthPackage[] = [
+  {
+    id: "pkg-full-body",
+    title: "Full Body Wellness Profile",
+    title_bn: "ফুল বডি প্রিমিয়াম চেকআপ",
+    subtitle: "সার্বিক শারীরিক সুস্থতা ও ভাইটাল অর্গান মনিটরিং",
+    badge: "সবচেয়ে জনপ্রিয়",
+    regularPrice: 3250,
+    offerPrice: 2350,
+    reportTime: "২৪ ঘণ্টা",
+    sampleType: "রক্ত ও প্রস্রাব",
+    includedKeywords: ["CBC", "Creatinine", "Electrolytes", "TSH", "Glucose", "Urine R/E"],
+    highlights: ["রক্তের সম্পূর্ণ চিত্র (CBC)", "কিডনি কার্যকারিতা (Creatinine)", "হরমোন ব্যালান্স (TSH)", "ইলেক্ট্রোলাইটস ও সুগার"],
+  },
+  {
+    id: "pkg-diabetes",
+    title: "Diabetes Care Profile",
+    title_bn: "ডায়াবেটিস কমপ্লিট কেয়ার",
+    subtitle: "সুগার লেভেল ও ডায়াবেটিস জনিত ঝুঁকি পর্যবেক্ষণ",
+    badge: "৩০% সাশ্রয়",
+    regularPrice: 2000,
+    offerPrice: 1450,
+    reportTime: "১২ ঘণ্টা",
+    sampleType: "রক্ত ও প্রস্রাব",
+    includedKeywords: ["Glucose", "Urine Microalbumin", "Electrolytes"],
+    highlights: ["২ ঘণ্টা গ্লুকোজ টেস্ট", "কিডনি প্রটেকশন (Microalbumin)", "ইলেক্ট্রোলাইটস ব্যালান্স"],
+  },
+  {
+    id: "pkg-cardiac",
+    title: "Healthy Heart & Lipid Care",
+    title_bn: "হার্ট ও কার্ডিয়াক স্ক্রিনিং",
+    subtitle: "হৃদযন্ত্রের সুস্থতা ও লিপিড প্রোফাইল চেকআপ",
+    badge: "বিশেষ ছাড়",
+    regularPrice: 2500,
+    offerPrice: 1850,
+    reportTime: "২৪ ঘণ্টা",
+    sampleType: "রক্ত",
+    includedKeywords: ["Electrolytes", "Acid Total Phosphate"],
+    highlights: ["ইলেক্ট্রোলাইটস পরীক্ষা", "কার্ডিয়াক মার্কার স্ক্রিনিং", "হার্ট রিস্ক অ্যাসেসমেন্ট"],
+  },
+  {
+    id: "pkg-women",
+    title: "Women's Wellness Profile",
+    title_bn: "মহিলাদের বিশেষ হেলথ চেকআপ",
+    subtitle: "থাইরয়েড, রক্তস্বল্পতা ও মেটাবলিক স্বাস্থ্য",
+    badge: "নারী স্বাস্থ্য",
+    regularPrice: 2250,
+    offerPrice: 1650,
+    reportTime: "২৪ ঘণ্টা",
+    sampleType: "রক্ত ও প্রস্রাব",
+    includedKeywords: ["CBC", "TSH", "Albumin", "Urine R/E"],
+    highlights: ["হিমোগ্লোবিন ও রক্তস্বল্পতা", "থাইরয়েড হরমোন (TSH)", "প্রোটিন লেভেল ও ইউরিন"],
+  },
+];
+
 const LabTest = () => {
-  const { addItem, updateQuantity, clearCart } = useCart();
+  const { addItem, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const locState = location.state as { division?: string; zilla?: string; upazilla?: string } | null;
@@ -68,24 +163,75 @@ const LabTest = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTests, setSelectedTests] = useState<Set<string>>(new Set());
   const [labTests, setLabTests] = useState<LabTestItem[]>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
 
-  // Location step
-  const [locationConfirmed, setLocationConfirmed] = useState(!!locState?.division);
-  const [selectedDivision, setSelectedDivision] = useState(locState?.division || "");
-  const [selectedZilla, setSelectedZilla] = useState(locState?.zilla || "");
-  const [selectedUpazilla, setSelectedUpazilla] = useState(locState?.upazilla || "");
+  // Location handling (non-blocking, browse-first)
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState(() => {
+    if (locState?.division) return locState.division;
+    try {
+      const saved = localStorage.getItem("sheikhpharma_lab_location");
+      if (saved) return JSON.parse(saved).division || "";
+    } catch { /* ignore */ }
+    return "Mymensingh"; // Sensible default for Sheikh Pharma headquarters
+  });
+  const [selectedZilla, setSelectedZilla] = useState(() => {
+    if (locState?.zilla) return locState.zilla;
+    try {
+      const saved = localStorage.getItem("sheikhpharma_lab_location");
+      if (saved) return JSON.parse(saved).zilla || "";
+    } catch { /* ignore */ }
+    return "Mymensingh";
+  });
+  const [selectedUpazilla, setSelectedUpazilla] = useState(() => {
+    if (locState?.upazilla) return locState.upazilla;
+    try {
+      const saved = localStorage.getItem("sheikhpharma_lab_location");
+      if (saved) return JSON.parse(saved).upazilla || "";
+    } catch { /* ignore */ }
+    return "Mymensingh Sadar";
+  });
+
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [labCenters, setLabCenters] = useState<LabCenter[]>([]);
   const [selectedCenter, setSelectedCenter] = useState<LabCenter | null>(null);
   const [selectedCenterType, setSelectedCenterType] = useState<string>("all");
   const [centerTestAssignments, setCenterTestAssignments] = useState<CenterTestAssignment[]>([]);
 
+  // Prescription Upload Modal State
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
+  const [prescriptionSubmitting, setPrescriptionSubmitting] = useState(false);
+  const [prescriptionUrl, setPrescriptionUrl] = useState("");
+  const [prescriptionPreview, setPrescriptionPreview] = useState("");
+  const [prescriptionForm, setPrescriptionForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Save location preference
+    try {
+      if (selectedDivision) {
+        localStorage.setItem(
+          "sheikhpharma_lab_location",
+          JSON.stringify({ division: selectedDivision, zilla: selectedZilla, upazilla: selectedUpazilla })
+        );
+      }
+    } catch { /* ignore */ }
+  }, [selectedDivision, selectedZilla, selectedUpazilla]);
+
   useEffect(() => {
     (supabase.from("delivery_zones" as any) as any).select("*").eq("is_active", true).then(({ data }: any) => {
       if (data) setDeliveryZones(data as DeliveryZone[]);
     });
+    setLoadingTests(true);
     (supabase.from("lab_tests" as any) as any).select("*").eq("is_active", true).order("sort_order").then(({ data }: any) => {
       if (data) setLabTests(data as LabTestItem[]);
+      setLoadingTests(false);
     });
     (supabase.from("lab_centers" as any) as any).select("*").eq("is_active", true).order("sort_order").then(({ data }: any) => {
       if (data) setLabCenters(data as LabCenter[]);
@@ -93,433 +239,1132 @@ const LabTest = () => {
   }, []);
 
   const divisions = useMemo(() => [...new Set(deliveryZones.map((z) => z.division))].sort(), [deliveryZones]);
-  const zillas = useMemo(() => selectedDivision ? [...new Set(deliveryZones.filter((z) => z.division === selectedDivision && z.zilla).map((z) => z.zilla!))].sort() : [], [deliveryZones, selectedDivision]);
-  const upazillas = useMemo(() => selectedZilla ? [...new Set(deliveryZones.filter((z) => z.division === selectedDivision && z.zilla === selectedZilla && z.upazilla).map((z) => z.upazilla!))].sort() : [], [deliveryZones, selectedDivision, selectedZilla]);
+  const zillas = useMemo(
+    () => (selectedDivision ? [...new Set(deliveryZones.filter((z) => z.division === selectedDivision && z.zilla).map((z) => z.zilla!))].sort() : []),
+    [deliveryZones, selectedDivision]
+  );
+  const upazillas = useMemo(
+    () => (selectedZilla ? [...new Set(deliveryZones.filter((z) => z.division === selectedDivision && z.zilla === selectedZilla && z.upazilla).map((z) => z.upazilla!))].sort() : []),
+    [deliveryZones, selectedDivision, selectedZilla]
+  );
 
   const categories = useMemo(() => {
-    const cats = [...new Set(labTests.map(t => t.category).filter(Boolean))].sort();
+    const cats = [...new Set(labTests.map((t) => t.category).filter(Boolean))].sort();
     return cats;
   }, [labTests]);
 
   const matchedCenters = useMemo(() => {
-    if (!locationConfirmed || !selectedDivision) return [];
-    return labCenters.filter(c => {
+    if (!selectedDivision) return labCenters;
+    return labCenters.filter((c) => {
       if (c.division && c.division !== selectedDivision) return false;
       if (selectedZilla && c.zilla && c.zilla !== selectedZilla) return false;
       if (selectedUpazilla && c.upazilla && c.upazilla !== selectedUpazilla) return false;
       return true;
     });
-  }, [labCenters, locationConfirmed, selectedDivision, selectedZilla, selectedUpazilla]);
+  }, [labCenters, selectedDivision, selectedZilla, selectedUpazilla]);
 
-  const centerTypeLabel = (t: string) => t === "hospital" ? "Hospital" : t === "clinic" ? "Clinic" : "Diagnostic Center";
+  const centerTypeLabel = (t: string) => (t === "hospital" ? "Hospital" : t === "clinic" ? "Clinic" : "Diagnostic Center");
 
   const handleSelectCenter = async (center: LabCenter) => {
     setSelectedCenter(center);
     setSelectedTests(new Set());
     const { data } = await (supabase.from("lab_center_tests" as any) as any)
-      .select("test_id, price, govt_price").eq("center_id", center.id).eq("is_active", true);
+      .select("test_id, price, govt_price")
+      .eq("center_id", center.id)
+      .eq("is_active", true);
     setCenterTestAssignments((data || []) as CenterTestAssignment[]);
+    toast.info(`${center.name} নির্বাচিত হয়েছে`);
   };
 
   const clearCenter = () => {
     setSelectedCenter(null);
     setCenterTestAssignments([]);
     setSelectedTests(new Set());
+    toast.info("সব ল্যাব সেন্টারের টেস্ট দেখানো হচ্ছে");
   };
 
   const getTestPrice = (testId: string, defaultPrice: number) => {
     if (!selectedCenter) return defaultPrice;
-    const a = centerTestAssignments.find(x => x.test_id === testId);
+    const a = centerTestAssignments.find((x) => x.test_id === testId);
     if (!a) return defaultPrice;
-    // If govt_price > 0, admin marked it as govt rate
     if (a.govt_price && a.govt_price > 0) return a.govt_price;
     return a.price;
   };
 
   const isGovtRate = (testId: string) => {
     if (!selectedCenter) return false;
-    const a = centerTestAssignments.find(x => x.test_id === testId);
-    return a && a.govt_price && a.govt_price > 0;
+    const a = centerTestAssignments.find((x) => x.test_id === testId);
+    return Boolean(a && a.govt_price && a.govt_price > 0);
   };
 
   const availableTests = useMemo(() => {
     if (!selectedCenter || centerTestAssignments.length === 0) return labTests;
-    const assignedIds = new Set(centerTestAssignments.map(a => a.test_id));
-    return labTests.filter(t => assignedIds.has(t.id));
+    const assignedIds = new Set(centerTestAssignments.map((a) => a.test_id));
+    return labTests.filter((t) => assignedIds.has(t.id));
   }, [labTests, selectedCenter, centerTestAssignments]);
 
-  const filtered = availableTests.filter((t) => {
-    const matchSearch = !search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.name_bn && t.name_bn.includes(search));
-    const matchCat = selectedCategory === "all" || t.category === selectedCategory;
-    return matchSearch && matchCat;
-  });
+  const filtered = useMemo(() => {
+    return availableTests.filter((t) => {
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || t.name.toLowerCase().includes(q) || (t.name_bn && t.name_bn.toLowerCase().includes(q));
+      const matchCat = selectedCategory === "all" || t.category === selectedCategory;
+      return matchSearch && matchCat;
+    });
+  }, [availableTests, search, selectedCategory]);
 
-  const popularTests = availableTests.filter((t) => t.is_popular);
+  // Popular tests: If none flagged in DB, pick common essential tests like CBC, Creatinine, Electrolytes, TSH, Glucose, etc.
+  const popularTests = useMemo(() => {
+    const flagged = availableTests.filter((t) => t.is_popular);
+    if (flagged.length > 0) return flagged;
+    const topKeywords = ["cbc", "glucose", "creatinine", "tsh", "electrolytes", "urine r/e", "albumin"];
+    return availableTests.filter((t) => topKeywords.some((k) => t.name.toLowerCase().includes(k))).slice(0, 8);
+  }, [availableTests]);
 
   const toggleTest = (id: string) => {
     setSelectedTests((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
+      if (n.has(id)) {
+        n.delete(id);
+      } else {
+        n.add(id);
+        const item = availableTests.find((x) => x.id === id);
+        if (item) toast.success(`"${item.name}" তালিকায় যোগ করা হয়েছে`);
+      }
       return n;
     });
   };
 
-  const selectedList = availableTests.filter((t) => selectedTests.has(t.id));
-  const subtotal = selectedList.reduce((s, t) => s + getTestPrice(t.id, t.price), 0);
+  // One-click booking for health packages
+  const handleBookPackage = (pkg: HealthPackage) => {
+    // Find tests matching the keywords in this package
+    const matchingTestIds: string[] = [];
+    pkg.includedKeywords.forEach((kw) => {
+      const found = availableTests.find((t) => t.name.toLowerCase().includes(kw.toLowerCase()));
+      if (found) matchingTestIds.push(found.id);
+    });
+
+    if (matchingTestIds.length > 0) {
+      setSelectedTests((prev) => {
+        const next = new Set(prev);
+        matchingTestIds.forEach((id) => next.add(id));
+        return next;
+      });
+      toast.success(`🎉 ${pkg.title_bn} এর টেস্টগুলো যুক্ত হয়েছে!`, {
+        description: `${matchingTestIds.length} টি টেস্ট সিলেক্ট করা হয়েছে`,
+      });
+    } else {
+      // Fallback: Add package as a single item directly to cart
+      addItem({
+        id: `lab-pkg-${pkg.id}`,
+        name: `${pkg.title_bn} (${pkg.title})`,
+        price: pkg.offerPrice,
+        image_url: null,
+      });
+      toast.success(`🎉 ${pkg.title_bn} কার্টে যোগ হয়েছে!`);
+      navigate("/checkout");
+    }
+  };
+
+  const selectedList = useMemo(() => availableTests.filter((t) => selectedTests.has(t.id)), [availableTests, selectedTests]);
+  const subtotal = useMemo(() => selectedList.reduce((s, t) => s + getTestPrice(t.id, t.price), 0), [selectedList, selectedCenter, centerTestAssignments]);
 
   const handleCheckout = () => {
     if (selectedTests.size === 0) {
-      toast.error("Please select at least one test");
+      toast.error("অনুগ্রহ করে অন্তত একটি টেস্ট নির্বাচন করুন");
       return;
     }
     clearCart();
     setTimeout(() => {
       selectedList.forEach((t) => {
-        addItem({ id: `lab-${t.id}`, name: `${t.name}${selectedCenter ? ` (${selectedCenter.name})` : ""}`, price: getTestPrice(t.id, t.price), image_url: null });
+        addItem({
+          id: `lab-${t.id}`,
+          name: `${t.name}${t.name_bn ? ` (${t.name_bn})` : ""}${selectedCenter ? ` - ${selectedCenter.name}` : ""}`,
+          price: getTestPrice(t.id, t.price),
+          image_url: null,
+        });
       });
-      toast.success("Lab tests added to cart!");
+      toast.success("ল্যাব টেস্ট কার্টে যোগ হয়েছে!");
       navigate("/checkout");
     }, 100);
   };
 
+  // Prescription Upload Handler
+  const handlePrescriptionFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("ফাইলের সাইজ ১০ এমবি এর কম হতে হবে");
+      return;
+    }
+
+    setPrescriptionUploading(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const fileName = `lab-prescription-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error } = await supabase.storage.from("prescriptions").upload(fileName, file, {
+      contentType: file.type || "image/jpeg",
+      upsert: false,
+    });
+
+    if (error) {
+      toast.error("প্রেসক্রিপশন আপলোড ব্যর্থ হয়েছে: " + error.message);
+      setPrescriptionUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("prescriptions").getPublicUrl(fileName);
+    setPrescriptionUrl(urlData.publicUrl);
+    setPrescriptionPreview(urlData.publicUrl);
+    setPrescriptionUploading(false);
+    toast.success("প্রেসক্রিপশন সফলভাবে আপলোড হয়েছে!");
+  };
+
+  const handlePrescriptionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prescriptionUrl) {
+      toast.error("অনুগ্রহ করে প্রেসক্রিপশনের ছবি আপলোড করুন");
+      return;
+    }
+    if (!prescriptionForm.name.trim()) {
+      toast.error("অনুগ্রহ করে আপনার নাম লিখুন");
+      return;
+    }
+    if (!prescriptionForm.phone.trim()) {
+      toast.error("অনুগ্রহ করে মোবাইল নাম্বার লিখুন");
+      return;
+    }
+
+    setPrescriptionSubmitting(true);
+    const { error } = await (supabase.from("prescription_orders" as any) as any).insert({
+      user_id: user?.id || null,
+      customer_name: prescriptionForm.name.trim(),
+      customer_phone: prescriptionForm.phone.trim(),
+      customer_address: prescriptionForm.address.trim() || null,
+      customer_division: selectedDivision || null,
+      customer_zilla: selectedZilla || null,
+      customer_upazilla: selectedUpazilla || null,
+      prescription_url: prescriptionUrl,
+      notes: `[Lab Test Request] ${prescriptionForm.notes ? prescriptionForm.notes.trim() : ""}`,
+    });
+
+    setPrescriptionSubmitting(false);
+
+    if (error) {
+      toast.error("বুকিং জমা দেওয়া সম্ভব হয়নি: " + error.message);
+      return;
+    }
+
+    toast.success("ল্যাব টেস্টের জন্য প্রেসক্রিপশন জমা হয়েছে!", {
+      description: "আমাদের প্রতিনিধি দ্রুত আপনার সাথে যোগাযোগ করবেন।",
+    });
+
+    setIsPrescriptionModalOpen(false);
+    setPrescriptionUrl("");
+    setPrescriptionPreview("");
+    setPrescriptionForm({ name: "", phone: "", address: "", notes: "" });
+  };
+
+  const locationDisplay = [selectedUpazilla, selectedZilla, selectedDivision].filter(Boolean).join(", ");
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg md:max-w-2xl lg:max-w-4xl pb-32">
-        <BackButton className="mb-3" />
 
-        {/* Location Selection Step */}
-        {!locationConfirmed ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-xl mb-5">
-              <MapPin className="h-8 w-8 text-white" />
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl pb-32">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <BackButton />
+
+          {/* Compact, Non-blocking Location Pill */}
+          <button
+            onClick={() => setIsLocationModalOpen(true)}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 via-blue-50 to-emerald-50 dark:from-primary/20 dark:to-emerald-950/30 border border-primary/25 hover:border-primary/50 text-xs font-semibold text-primary transition-all shadow-xs hover:shadow-sm"
+          >
+            <MapPin className="h-3.5 w-3.5 text-primary animate-bounce shrink-0" />
+            <span className="text-muted-foreground font-normal hidden sm:inline">কালেকশন এলাকা:</span>
+            <span className="font-bold text-foreground max-w-[140px] sm:max-w-[200px] truncate">
+              {locationDisplay || "এলাকা নির্বাচন করুন"}
+            </span>
+            <span className="text-[11px] underline ml-1 text-primary group-hover:text-blue-600 font-bold">পরিবর্তন</span>
+          </button>
+        </div>
+
+        {/* TOP HERO & DIRECT ORDER SECTION ("YOU CAN ORDER VIA") */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-primary text-white p-4 sm:p-7 shadow-xl mb-6">
+          <div
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: "radial-gradient(circle at 20% 30%, white 2px, transparent 2px), radial-gradient(circle at 80% 70%, white 2px, transparent 2px)",
+              backgroundSize: "32px 32px, 48px 48px",
+            }}
+          />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] sm:text-xs font-bold text-white border border-white/30 shadow-xs">
+                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                ডোরস্টেপ হোম স্যাম্পল কালেকশন সার্ভিস
+              </div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
+                ঘরে বসেই ল্যাব টেস্ট করুন, সময় ও খরচ বাঁচান
+              </h1>
+              <p className="text-xs sm:text-sm text-blue-100 font-medium leading-relaxed">
+                প্রশিক্ষিত ও সার্টিফাইড টেকনিশিয়ান (Phlebotomist) আপনার বাসায় এসে ব্যথাহীনভাবে স্যাম্পল সংগ্রহ করবেন। ১০০% নির্ভুল ও বিশ্বস্ত ল্যাব রিপোর্ট।
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground mb-1">Select Your Location</h1>
-            <p className="text-sm text-muted-foreground font-medium mb-6 text-center">
-              আপনার এলাকা নির্বাচন করুন যেখানে স্যাম্পল কালেকশন করা হবে
+
+            {/* Quick Stat Badges */}
+            <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0">
+              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-semibold">
+                <Clock className="h-4 w-4 text-emerald-300 shrink-0" />
+                <span>১২-২৪ ঘণ্টায় রিপোর্ট</span>
+              </div>
+              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-semibold">
+                <ShieldCheck className="h-4 w-4 text-amber-300 shrink-0" />
+                <span>১০০% নিরাপদ ও স্টেরাইল</span>
+              </div>
+            </div>
+          </div>
+
+          {/* THREE CONVERSION CTA CARDS */}
+          <div className="relative z-10 mt-6 pt-5 border-t border-white/20">
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-200 mb-3 flex items-center gap-1.5">
+              <span>সহজ উপায়ে অর্ডার করুন (ORDER VIA)</span>
             </p>
 
-            <div className="w-full max-w-md space-y-4">
-              <div className="space-y-1.5">
-                <Label className="font-bold text-sm">Division (বিভাগ) *</Label>
-                <Select value={selectedDivision} onValueChange={(v) => { setSelectedDivision(v); setSelectedZilla(""); setSelectedUpazilla(""); }}>
-                  <SelectTrigger className="bg-background h-11 rounded-xl border-2 border-primary/20 font-medium">
-                    <SelectValue placeholder="Select Division" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {divisions.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* WhatsApp Button */}
+              <a
+                href={`https://wa.me/8801712472839?text=${encodeURIComponent("আসসালামু আলাইকুম Sheikh Pharma, আমি ঘরে বসে ল্যাব টেস্ট বুক করতে চাই / প্রেসক্রিপশন পাঠাতে চাই।")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3.5 p-3 sm:p-3.5 rounded-xl bg-white hover:bg-emerald-50 text-gray-900 shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+              >
+                <div className="h-11 w-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform shrink-0">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                      WhatsApp-এ অর্ডার
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] text-gray-600 truncate">প্রেসক্রিপশন পাঠান বা চ্যাট করুন</p>
+                  <p className="text-[11px] font-bold text-emerald-700">01712-472839</p>
+                </div>
+              </a>
+
+              {/* Direct Call Button */}
+              <a
+                href="tel:01712472839"
+                className="group flex items-center gap-3.5 p-3 sm:p-3.5 rounded-xl bg-white hover:bg-blue-50 text-gray-900 shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+              >
+                <div className="h-11 w-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Phone className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-blue-700 transition-colors">
+                      সরাসরি কল দিন
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] text-gray-600 truncate">জরুরি টেস্ট বুকিং সহায়তা</p>
+                  <p className="text-[11px] font-bold text-blue-700">01712-472839</p>
+                </div>
+              </a>
+
+              {/* Prescription Upload Button */}
+              <button
+                type="button"
+                onClick={() => setIsPrescriptionModalOpen(true)}
+                className="group flex items-center gap-3.5 p-3 sm:p-3.5 rounded-xl bg-white hover:bg-purple-50 text-gray-900 shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] text-left"
+              >
+                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-600/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Upload className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-purple-700 transition-colors">
+                      প্রেসক্রিপশন আপলোড
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] text-gray-600 truncate">ডাক্তারের স্লিপের ছবি দিন</p>
+                  <p className="text-[11px] font-bold text-purple-700">১ ক্লিকে বুক করুন</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* CURATED HEALTH PACKAGES SECTION */}
+        <section className="mb-8">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-xl font-extrabold text-foreground flex items-center gap-1.5">
+                  <HeartPulse className="h-5 w-5 text-rose-500" />
+                  জনপ্রিয় স্বাস্থ্য চেকআপ প্যাকেজ (Health Packages)
+                </h2>
+                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                  Save Up to 35%
+                </span>
               </div>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                সম্পূর্ণ বডি ও প্রিভেন্টিভ স্ক্রিনিং প্যাকেজে সাশ্রয়ী মূল্যে টেস্ট করান
+              </p>
+            </div>
+          </div>
 
-              {selectedDivision && zillas.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="font-bold text-sm">Zilla (জেলা) *</Label>
-                  <Select value={selectedZilla} onValueChange={(v) => { setSelectedZilla(v); setSelectedUpazilla(""); }}>
-                    <SelectTrigger className="bg-background h-11 rounded-xl border-2 border-primary/20 font-medium">
-                      <SelectValue placeholder="Select Zilla" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {zillas.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {HEALTH_PACKAGES.map((pkg) => (
+              <div
+                key={pkg.id}
+                className="group relative flex flex-col justify-between rounded-2xl border-2 border-border/80 bg-card hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-4 overflow-hidden"
+              >
+                {/* Top badge */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                    {pkg.badge}
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                    <Clock className="h-3 w-3" /> {pkg.reportTime}
+                  </span>
                 </div>
-              )}
 
-              {selectedZilla && upazillas.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="font-bold text-sm">Upazilla (উপজেলা)</Label>
-                  <Select value={selectedUpazilla} onValueChange={setSelectedUpazilla}>
-                    <SelectTrigger className="bg-background h-11 rounded-xl border-2 border-primary/20 font-medium">
-                      <SelectValue placeholder="Select Upazilla" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {upazillas.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <h3 className="text-sm font-extrabold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                    {pkg.title_bn}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground font-medium mb-3 line-clamp-1">{pkg.subtitle}</p>
+
+                  <div className="space-y-1.5 mb-4 py-2 border-y border-dashed border-border/80">
+                    {pkg.highlights.map((h, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 text-[11px] text-foreground/90">
+                        <CheckCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{h}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
 
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-lg font-black text-primary">৳{pkg.offerPrice}</span>
+                    <span className="text-xs text-muted-foreground line-through">৳{pkg.regularPrice}</span>
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.2 rounded">
+                      -{Math.round(((pkg.regularPrice - pkg.offerPrice) / pkg.regularPrice) * 100)}%
+                    </span>
+                  </div>
+
+                  <Button
+                    onClick={() => handleBookPackage(pkg)}
+                    className="w-full font-bold text-xs h-9 rounded-xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-sm"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    প্যাকেজ বুক করুন
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* NEARBY LAB CENTERS (IF ANY MATCH) */}
+        {matchedCenters.length > 0 && (
+          <section className="mb-6 rounded-2xl border bg-card/60 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-extrabold text-foreground">
+                  নিকটস্থ ডায়াগনস্টিক পার্টনার ল্যাব
+                </h2>
+                <span className="text-xs text-muted-foreground font-medium">({matchedCenters.length} টি)</span>
+              </div>
+              {selectedCenter && (
+                <button onClick={clearCenter} className="text-xs text-destructive font-bold hover:underline">
+                  সব ল্যাব দেখুন
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              {matchedCenters.map((c) => {
+                const isSelected = selectedCenter?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => (isSelected ? clearCenter() : handleSelectCenter(c))}
+                    className={`flex-shrink-0 w-64 border-2 rounded-xl p-3 bg-card transition-all text-left shadow-xs ${
+                      isSelected ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20" : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 mb-2">
+                      {c.logo_url ? (
+                        <img src={c.logo_url} alt={c.name} className="h-10 w-10 rounded-lg object-cover border" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold truncate text-foreground">{c.name}</p>
+                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md inline-block">
+                          {centerTypeLabel(c.type)}
+                        </span>
+                      </div>
+                    </div>
+                    {c.address && <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1">{c.address}</p>}
+                    <div className="flex items-center justify-between pt-1 border-t border-border/50 text-[11px]">
+                      {c.phone ? (
+                        <span className="flex items-center gap-1 font-bold text-primary">
+                          <Phone className="h-3 w-3" /> {c.phone}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">অফিসিয়াল পার্টনার</span>
+                      )}
+                      <span className="text-[10px] font-bold text-primary">
+                        {isSelected ? "✓ সিলেক্টেড" : "টেস্ট দেখুন →"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* TEST SEARCH & CATEGORIES */}
+        <section className="mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ল্যাব টেস্টের নাম খুঁজুন (যেমন: CBC, Sugar, Lipid, TSH, Creatinine)..."
+                className="pl-10 h-11 rounded-xl border-2 border-primary/20 focus:border-primary text-sm font-medium"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Find Centers Button when tests selected */}
+            {selectedTests.size > 0 && (
               <Button
                 onClick={() => {
-                  if (!selectedDivision) { toast.error("Please select a division"); return; }
-                  setLocationConfirmed(true);
+                  const testNames = availableTests.filter((t) => selectedTests.has(t.id)).map((t) => t.name);
+                  navigate("/lab-test/centers", {
+                    state: {
+                      testIds: [...selectedTests],
+                      testNames,
+                      division: selectedDivision,
+                      zilla: selectedZilla,
+                      upazilla: selectedUpazilla,
+                    },
+                  });
                 }}
-                disabled={!selectedDivision}
-                className="w-full font-bold bg-gradient-to-r from-primary to-blue-600 text-white shadow-lg h-12 text-base rounded-xl mt-2"
+                className="font-bold bg-gradient-to-r from-primary to-blue-600 text-white shadow-md h-11 px-4 text-xs shrink-0 rounded-xl"
               >
-                <ChevronRight className="h-5 w-5 mr-2" />
-                Continue — টেস্ট নির্বাচন করুন
+                <Search className="h-3.5 w-3.5 mr-1.5" />
+                সেন্টার খুঁজুন ({selectedTests.size})
+              </Button>
+            )}
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                selectedCategory === "all"
+                  ? "bg-primary text-primary-foreground shadow-md scale-102"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Beaker className="h-3.5 w-3.5" />
+              সকল টেস্ট ({availableTests.length})
+            </button>
+            {categories.map((cat) => {
+              const count = availableTests.filter((t) => t.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                    selectedCategory === cat
+                      ? "bg-primary text-primary-foreground shadow-md scale-102"
+                      : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {cat} <span className="opacity-75 font-normal ml-0.5">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* POPULAR QUICK TESTS (WHEN BROWSING ALL & NO SEARCH) */}
+        {!search && selectedCategory === "all" && popularTests.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-sm font-extrabold text-foreground mb-3 flex items-center gap-1.5">
+              <span>🔥 সর্বাধিক বুকড টেস্ট (Most Popular Tests)</span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {popularTests.map((t) => {
+                const isSelected = selectedTests.has(t.id);
+                const price = getTestPrice(t.id, t.price);
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => toggleTest(t.id)}
+                    className={`flex flex-col justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                      isSelected
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-border bg-card hover:border-primary/40 shadow-2xs"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                          {t.category || "ল্যাব"}
+                        </span>
+                        {isSelected && <Check className="h-4 w-4 text-primary stroke-[3]" />}
+                      </div>
+                      <p className="text-xs font-extrabold text-foreground line-clamp-1">{t.name}</p>
+                      {t.name_bn && <p className="text-[10px] text-muted-foreground truncate">{t.name_bn}</p>}
+                    </div>
+
+                    <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
+                      <span className="text-xs font-black text-primary">৳{price}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                      }`}>
+                        {isSelected ? "যুক্ত হয়েছে" : "+ যোগ"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ALL TESTS LIST / CARDS */}
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
+              <Microscope className="h-4 w-4 text-primary" />
+              {selectedCategory === "all" ? "সকল টেস্ট তালিকা" : `${selectedCategory} টেস্ট`}
+              <span className="text-muted-foreground font-medium">({filtered.length})</span>
+            </h2>
+
+            {selectedTests.size > 0 && (
+              <button
+                onClick={() => setSelectedTests(new Set())}
+                className="text-xs font-bold text-destructive hover:underline"
+              >
+                সব মুছুন ({selectedTests.size})
+              </button>
+            )}
+          </div>
+
+          {loadingTests ? (
+            <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+              <p className="text-sm font-medium">টেস্ট তালিকা লোড হচ্ছে...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-muted/20">
+              <Microscope className="h-10 w-10 mx-auto mb-2 text-muted-foreground/60" />
+              <p className="text-sm font-bold text-foreground">কোনো টেস্ট পাওয়া যায়নি</p>
+              <p className="text-xs text-muted-foreground mt-1">অন্য কোনো কিওয়ার্ড দিয়ে চেষ্টা করুন বা সরাসরি ফোন দিন</p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => { setSearch(""); setSelectedCategory("all"); }}>
+                  সব টেস্ট দেখুন
+                </Button>
+                <a href="tel:01712472839">
+                  <Button size="sm" className="bg-primary text-white">
+                    <Phone className="h-3.5 w-3.5 mr-1" /> সাহায্য চাই
+                  </Button>
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((t) => {
+                const isSelected = selectedTests.has(t.id);
+                const price = getTestPrice(t.id, t.price);
+                const isGovt = isGovtRate(t.id);
+
+                return (
+                  <div
+                    key={t.id}
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30"
+                        : "border-border bg-card hover:border-primary/40 shadow-xs"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                          {t.category || "Pathology"}
+                        </span>
+                        {isGovt && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+                            সরকারি রেট
+                          </span>
+                        )}
+                        <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> ১২-২৪ ঘণ্টা
+                        </span>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-foreground leading-snug">{t.name}</h3>
+                      {t.name_bn && <p className="text-xs text-muted-foreground mt-0.5">{t.name_bn}</p>}
+
+                      <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <ShieldCheck className="h-3 w-3 text-emerald-500" /> হোম কালেকশন
+                        </span>
+                        <span>•</span>
+                        <span>নির্ভুল ল্যাব রিপোর্ট</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-base font-black text-primary">৳{price}</span>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        onClick={() => toggleTest(t.id)}
+                        className={`h-8 px-3 rounded-lg font-bold text-xs transition-all ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "bg-muted hover:bg-primary hover:text-primary-foreground text-foreground"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1" /> নির্বাচিত
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3.5 w-3.5 mr-1" /> যোগ করুন
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* HOW IT WORKS (ঘরে বসে টেস্টের ৪টি সহজ ধাপ) */}
+        <section className="mb-8 rounded-2xl bg-gradient-to-br from-muted/60 via-card to-muted/40 p-5 sm:p-6 border border-border">
+          <div className="text-center max-w-lg mx-auto mb-6">
+            <h2 className="text-base sm:text-xl font-extrabold text-foreground">
+              ঘরে বসে ল্যাব টেস্টের ৪টি সহজ ধাপ
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium mt-1">
+              হাসপাতালে বা ডায়াগনস্টিকে দীর্ঘ লাইনে দাঁড়িয়ে থাকার ঝামেলা ছাড়াই পান নিরাপদ সেবা
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex items-start gap-3 bg-card p-3.5 rounded-xl border border-border shadow-2xs">
+              <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-black text-sm shrink-0">
+                ০১
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">টেস্ট নির্বাচন বা স্লিপ দিন</h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  অনলাইনে টেস্ট বেছে নিন অথবা হোয়াটসঅ্যাপে প্রেসক্রিপশন পাঠান।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-card p-3.5 rounded-xl border border-border shadow-2xs">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black text-sm shrink-0">
+                ০২
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">হোম স্যাম্পল কালেকশন</h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  দক্ষ ফ্লেবোটোমিস্ট আপনার বাসায় গিয়ে নিরাপদভাবে স্যাম্পল সংগ্রহ করবেন।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-card p-3.5 rounded-xl border border-border shadow-2xs">
+              <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-black text-sm shrink-0">
+                ০৩
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">স্বীকৃত ল্যাবে পরীক্ষা</h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  পপুলার ও টপ ডায়াগনস্টিক সেন্টারের সর্বাধুনিক মেশিনে নির্ভুল টেস্ট সম্পন্ন।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-card p-3.5 rounded-xl border border-border shadow-2xs">
+              <div className="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-black text-sm shrink-0">
+                ০৪
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">ডিজিটাল রিপোর্ট ডেলিভারি</h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  রিপোর্ট প্রস্তুত হওয়া মাত্রই হোয়াটসঅ্যাপ বা অ্যাপে সরাসরি পিডিএফ পেয়ে যাবেন।
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TRUST & SAFETY GUARANTEE */}
+        <section className="mb-4 rounded-2xl border-2 border-primary/20 bg-primary/5 p-4 sm:p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="flex flex-col items-center">
+              <ShieldCheck className="h-6 w-6 text-primary mb-1" />
+              <p className="text-xs font-bold text-foreground">১০০% স্টেরাইল কিট</p>
+              <p className="text-[10px] text-muted-foreground">একবার ব্যবহারযোগ্য নিডল</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <Activity className="h-6 w-6 text-primary mb-1" />
+              <p className="text-xs font-bold text-foreground">কোল্ড চেইন পরিবহন</p>
+              <p className="text-[10px] text-muted-foreground">তাপমাত্রা নিয়ন্ত্রিত স্যাম্পল বক্স</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <Microscope className="h-6 w-6 text-primary mb-1" />
+              <p className="text-xs font-bold text-foreground">স্বীকৃত পার্টনার ল্যাব</p>
+              <p className="text-[10px] text-muted-foreground">মাননিয়ন্ত্রিত আন্তর্জাতিক স্ট্যান্ডার্ড</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <Phone className="h-6 w-6 text-primary mb-1" />
+              <p className="text-xs font-bold text-foreground">২৪/৭ কাস্টমার সাপোর্ট</p>
+              <p className="text-[10px] text-muted-foreground">মেডিকেল টিমের সরাসরি পরামর্শ</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* FLOATING BOTTOM CHECKOUT DOCK */}
+      {selectedTests.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t-2 border-primary/30 p-3 sm:p-4 shadow-2xl">
+          <div className="container mx-auto max-w-4xl flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-foreground">
+                  {selectedTests.size} টি টেস্ট নির্বাচিত
+                </span>
+                <button
+                  onClick={() => setSelectedTests(new Set())}
+                  className="text-[11px] font-bold text-destructive hover:underline hidden sm:inline"
+                >
+                  ক্লিয়ার
+                </button>
+              </div>
+              <p className="text-base sm:text-lg font-black text-primary">
+                মোট: ৳{subtotal}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const testNames = availableTests.filter((t) => selectedTests.has(t.id)).map((t) => t.name);
+                  navigate("/lab-test/centers", {
+                    state: {
+                      testIds: [...selectedTests],
+                      testNames,
+                      division: selectedDivision,
+                      zilla: selectedZilla,
+                      upazilla: selectedUpazilla,
+                    },
+                  });
+                }}
+                className="font-bold text-xs h-10 px-3 border-primary/40 hover:bg-primary/10"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-1 text-primary" />
+                ল্যাব সেন্টার
+              </Button>
+
+              <Button
+                onClick={handleCheckout}
+                className="font-extrabold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-lg h-10 px-5 text-xs sm:text-sm rounded-xl"
+              >
+                <ShoppingCart className="h-4 w-4 mr-1.5" />
+                বুকিং সম্পন্ন করুন
               </Button>
             </div>
           </div>
-        ) : (
-        <>
-        {/* Location badge */}
-        <button
-          onClick={() => setLocationConfirmed(false)}
-          className="flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          {[selectedUpazilla, selectedZilla, selectedDivision].filter(Boolean).join(", ")}
-          <span className="text-muted-foreground font-medium ml-1">— Change</span>
-        </button>
-
-        {/* Nearby Lab Centers */}
-        {matchedCenters.length > 0 && (
-          <div className="mb-5">
-            <h2 className="text-sm font-extrabold text-foreground mb-2 flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-primary" />
-              Nearby Centers
-              <span className="text-muted-foreground font-medium">({matchedCenters.length})</span>
-            </h2>
-            {/* Center type filter */}
-            <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide">
-              {["all", "clinic", "diagnostic", "hospital"].map(type => {
-                const count = type === "all" ? matchedCenters.length : matchedCenters.filter(c => c.type === type).length;
-                if (type !== "all" && count === 0) return null;
-                const label = type === "all" ? "All" : centerTypeLabel(type);
-                return (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedCenterType(type)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all shrink-0 ${
-                      selectedCenterType === type
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {label} ({count})
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {matchedCenters
-                .filter(c => selectedCenterType === "all" || c.type === selectedCenterType)
-                .map(c => (
-                <button key={c.id} onClick={() => navigate(`/lab-center/${c.id}`, { state: { fromLabTest: true, division: selectedDivision, zilla: selectedZilla, upazilla: selectedUpazilla } })} className={`flex-shrink-0 w-56 border-2 rounded-xl p-3 bg-card transition-colors text-left ${selectedCenter?.id === c.id ? "border-primary bg-primary/5 shadow-md" : "border-border hover:border-primary/40"}`}>
-                  <div className="flex items-center gap-2.5 mb-2">
-                    {c.logo_url ? (
-                      <img src={c.logo_url} alt={c.name} className="h-10 w-10 rounded-lg object-cover border" />
-                    ) : (
-                      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold truncate">{c.name}</p>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedCenterType(c.type); }}
-                        className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md hover:bg-primary/20 transition-colors"
-                      >
-                        {centerTypeLabel(c.type)}
-                      </button>
-                    </div>
-                  </div>
-                  {c.address && <p className="text-[10px] text-muted-foreground line-clamp-2 mb-1">{c.address}</p>}
-                  {c.phone && (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-primary">
-                      <Phone className="h-3 w-3" /> {c.phone}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Selected Center Badge */}
-        {selectedCenter && (
-          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-accent/50 border border-accent text-xs">
-            <Building2 className="h-3.5 w-3.5 text-primary" />
-            <span className="font-bold">{selectedCenter.name}</span>
-            <span className="text-muted-foreground">— {centerTestAssignments.length} tests available</span>
-            <button onClick={clearCenter} className="ml-auto text-destructive font-bold hover:underline text-[11px]">All Tests</button>
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg">
-            <Microscope className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">Lab Test</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">আপনার প্রয়োজনীয় টেস্ট নির্বাচন করুন</p>
-          </div>
         </div>
+      )}
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tests (টেস্ট খুঁজুন)..."
-            className="pl-10 h-11 rounded-xl border-2 border-primary/20 focus:border-primary"
-          />
-        </div>
+      {/* LOCATION SELECTION MODAL */}
+      <Dialog open={isLocationModalOpen} onOpenChange={setIsLocationModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-extrabold text-foreground">
+              <MapPin className="h-5 w-5 text-primary" />
+              স্যাম্পল কালেকশনের এলাকা নির্বাচন করুন
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              আপনার বিভাগ ও জেলা নির্বাচন করুন যাতে সঠিক পার্টনার ল্যাব ও রেট দেখানো যায়
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-              selectedCategory === "all" ? "bg-primary text-primary-foreground shadow-md scale-105" : "bg-muted/60 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Beaker className="h-3.5 w-3.5" />
-            All Tests
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-                selectedCategory === cat ? "bg-primary text-primary-foreground shadow-md scale-105" : "bg-muted/60 text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Find Centers Button - inline after category tabs */}
-        {selectedTests.size > 0 && (
-          <div className="flex items-center gap-3 mb-4 p-3 rounded-xl border-2 border-primary/30 bg-primary/5">
-            <div className="flex-1">
-              <p className="text-xs font-bold text-foreground">{selectedTests.size} test(s) selected</p>
-              <button onClick={() => setSelectedTests(new Set())} className="text-[11px] text-destructive font-bold hover:underline">Clear All</button>
+          <div className="space-y-3.5 py-2">
+            <div className="space-y-1.5">
+              <Label className="font-bold text-xs">Division (বিভাগ) *</Label>
+              <Select
+                value={selectedDivision}
+                onValueChange={(v) => {
+                  setSelectedDivision(v);
+                  setSelectedZilla("");
+                  setSelectedUpazilla("");
+                }}
+              >
+                <SelectTrigger className="h-10 rounded-xl border font-medium">
+                  <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {divisions.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {selectedDivision && zillas.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="font-bold text-xs">Zilla (জেলা) *</Label>
+                <Select
+                  value={selectedZilla}
+                  onValueChange={(v) => {
+                    setSelectedZilla(v);
+                    setSelectedUpazilla("");
+                  }}
+                >
+                  <SelectTrigger className="h-10 rounded-xl border font-medium">
+                    <SelectValue placeholder="জেলা নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {zillas.map((z) => (
+                      <SelectItem key={z} value={z}>
+                        {z}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedZilla && upazillas.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="font-bold text-xs">Upazilla (উপজেলা)</Label>
+                <Select value={selectedUpazilla} onValueChange={setSelectedUpazilla}>
+                  <SelectTrigger className="h-10 rounded-xl border font-medium">
+                    <SelectValue placeholder="উপজেলা নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {upazillas.map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {u}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
             <Button
-              onClick={() => {
-                const testNames = availableTests.filter(t => selectedTests.has(t.id)).map(t => t.name);
-                navigate("/lab-test/centers", {
-                  state: {
-                    testIds: [...selectedTests],
-                    testNames,
-                    division: selectedDivision,
-                    zilla: selectedZilla,
-                    upazilla: selectedUpazilla,
-                  }
-                });
-              }}
-              className="font-bold bg-gradient-to-r from-primary to-blue-600 text-white shadow-lg h-10 px-5 text-xs"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsLocationModalOpen(false)}
+              className="rounded-xl font-bold text-xs"
             >
-              <Search className="h-3.5 w-3.5 mr-1.5" />
-              Find Centers
+              বাতিল
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setIsLocationModalOpen(false);
+                toast.success("লোকেশন আপডেট করা হয়েছে!");
+              }}
+              className="bg-primary text-white rounded-xl font-bold text-xs px-5"
+            >
+              নিশ্চিত করুন
             </Button>
           </div>
-        )}
+        </DialogContent>
+      </Dialog>
 
-        {/* Popular Tests (only when no search & all category) */}
-        {!search && selectedCategory === "all" && popularTests.length > 0 && (
-          <div className="mb-5">
-            <h2 className="text-sm font-extrabold text-foreground mb-2 flex items-center gap-1.5">
-              🔥 Popular Tests
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {popularTests.map((t) => {
-                const isSelected = selectedTests.has(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleTest(t.id)}
-                    className={`px-3 py-2 rounded-xl border-2 transition-all text-xs font-bold ${
-                      isSelected
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card hover:border-primary/40 text-foreground"
-                    }`}
-                  >
-                    {isSelected && <Check className="h-3 w-3 inline mr-1" />}
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      {/* PRESCRIPTION UPLOAD MODAL */}
+      <Dialog open={isPrescriptionModalOpen} onOpenChange={setIsPrescriptionModalOpen}>
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-card max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-extrabold text-foreground">
+              <Upload className="h-5 w-5 text-primary" />
+              ল্যাব টেস্টের প্রেসক্রিপশন আপলোড করুন
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              ডাক্তারের টেস্ট স্লিপের স্পষ্ট ছবি দিন। আমাদের ফার্মাসিস্ট টেস্টগুলো বুক করে কনফার্ম করবেন।
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* All Tests grouped by category */}
-        <div className="mb-4 space-y-4">
-          <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-            <Beaker className="h-4 w-4 text-primary" />
-            {selectedCategory === "all" ? "All Tests" : `${selectedCategory} Tests`}
-            <span className="text-muted-foreground font-medium ml-1">({filtered.length})</span>
-          </h2>
+          <form onSubmit={handlePrescriptionSubmit} className="space-y-3.5 py-1">
+            {/* File drop area */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors ${
+                prescriptionPreview
+                  ? "border-emerald-500/60 bg-emerald-50/20"
+                  : "border-primary/30 hover:border-primary/60 bg-primary/5"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={handlePrescriptionFileChange}
+              />
 
-          {filtered.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Microscope className="h-10 w-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-medium">No tests found</p>
-            </div>
-          ) : selectedCategory !== "all" ? (
-            <div className="flex flex-wrap gap-1.5">
-              {filtered.map((t) => {
-                const isSelected = selectedTests.has(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleTest(t.id)}
-                    className={`px-2.5 py-1.5 rounded-lg border transition-all text-[11px] font-bold ${
-                      isSelected
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card hover:border-primary/40 text-foreground"
-                    }`}
-                  >
-                    {isSelected && <Check className="h-3 w-3 inline mr-1" />}
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            /* Grouped by category */
-            (() => {
-              const grouped = new Map<string, typeof filtered>();
-              filtered.forEach(t => {
-                const cat = t.category || "Other";
-                if (!grouped.has(cat)) grouped.set(cat, []);
-                grouped.get(cat)!.push(t);
-              });
-              return [...grouped.entries()].map(([cat, tests]) => (
-                <div key={cat} className="border rounded-xl bg-card overflow-hidden">
-                  <div className="px-3 py-2 bg-muted/50 border-b flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold text-foreground">{cat}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground">{tests.length} tests</span>
-                  </div>
-                  <div className="p-2 flex flex-wrap gap-1.5">
-                    {tests.map((t) => {
-                      const isSelected = selectedTests.has(t.id);
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => toggleTest(t.id)}
-                          className={`px-2.5 py-1.5 rounded-lg border transition-all text-[11px] font-bold ${
-                            isSelected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border/60 bg-background hover:border-primary/40 text-foreground"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3 w-3 inline mr-1" />}
-                          {t.name}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {prescriptionUploading ? (
+                <div className="py-6 flex flex-col items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                  <p className="text-xs font-bold text-foreground">প্রেসক্রিপশন আপলোড হচ্ছে...</p>
                 </div>
-              ));
-            })()
-          )}
-        </div>
-        </>
-        )}
-      </main>
+              ) : prescriptionPreview ? (
+                <div className="flex flex-col items-center">
+                  <img
+                    src={prescriptionPreview}
+                    alt="Prescription preview"
+                    className="h-32 object-contain rounded-lg border shadow-xs mb-2"
+                  />
+                  <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-4 w-4" /> ছবি আপলোড সফল হয়েছে (পরিবর্তন করতে ক্লিক করুন)
+                  </p>
+                </div>
+              ) : (
+                <div className="py-4 flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+                    <Upload className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-extrabold text-foreground">ক্যামেরা দিয়ে ছবি তুলুন বা ফাইল নির্বাচন করুন</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">JPG, PNG, PDF ফাইল সাপোর্ট করে (সর্বোচ্চ ১০ এমবি)</p>
+                </div>
+              )}
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold">রোগীর নাম (Name) *</Label>
+                <Input
+                  required
+                  placeholder="যেমন: মোঃ করিম"
+                  value={prescriptionForm.name}
+                  onChange={(e) => setPrescriptionForm((p) => ({ ...p, name: e.target.value }))}
+                  className="h-9 rounded-xl text-xs"
+                />
+              </div>
 
+              <div className="space-y-1">
+                <Label className="text-xs font-bold">মোবাইল নাম্বার (Phone) *</Label>
+                <Input
+                  required
+                  type="tel"
+                  placeholder="017XXXXXXXX"
+                  value={prescriptionForm.phone}
+                  onChange={(e) => setPrescriptionForm((p) => ({ ...p, phone: e.target.value }))}
+                  className="h-9 rounded-xl text-xs"
+                />
+              </div>
+            </div>
 
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">স্যাম্পল সংগ্রহের পূর্ণ ঠিকানা (Address)</Label>
+              <Input
+                placeholder="বাসা, রোড, এলাকা..."
+                value={prescriptionForm.address}
+                onChange={(e) => setPrescriptionForm((p) => ({ ...p, address: e.target.value }))}
+                className="h-9 rounded-xl text-xs"
+              />
+            </div>
 
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">কোনো বিশেষ টেস্ট বা নোট (ঐচ্ছিক)</Label>
+              <Textarea
+                rows={2}
+                placeholder="যেমন: সকালে ফাস্টিং স্যাম্পল কালেকশন করতে হবে..."
+                value={prescriptionForm.notes}
+                onChange={(e) => setPrescriptionForm((p) => ({ ...p, notes: e.target.value }))}
+                className="rounded-xl text-xs resize-none"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-between gap-3 border-t">
+              <a
+                href={`https://wa.me/8801712472839?text=${encodeURIComponent("আসসালামু আলাইকুম Sheikh Pharma, আমি প্রেসক্রিপশন পাঠিয়ে সরাসরি টেস্ট বুক করতে চাই।")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+              >
+                <MessageCircle className="h-4 w-4" /> হোয়াটসঅ্যাপে পাঠান
+              </a>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsPrescriptionModalOpen(false)}
+                  className="rounded-xl font-bold text-xs"
+                >
+                  বাতিল
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={prescriptionSubmitting || prescriptionUploading}
+                  size="sm"
+                  className="bg-primary text-white rounded-xl font-bold text-xs px-4"
+                >
+                  {prescriptionSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> জমা হচ্ছে...
+                    </>
+                  ) : (
+                    "বুকিং জমা দিন"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
