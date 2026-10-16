@@ -180,113 +180,113 @@ export const CATEGORY_META_MAP: Record<
     title_bn: "রক্ত ও প্যাথলজি",
     subtitle: "CBC, অ্যালার্জি ও রুটিন ব্লাড",
     icon: Droplets,
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-950/40",
-    borderColor: "border-red-200 dark:border-red-900/40 hover:border-red-400",
+    color: "text-rose-600 dark:text-rose-400",
+    bgColor: "bg-rose-50/80 dark:bg-rose-950/30",
+    borderColor: "border-rose-200/60 dark:border-rose-900/40",
   },
   Biochemistry: {
     title_bn: "বায়োকেমিস্ট্রি ও সুগার",
     subtitle: "ইলেক্ট্রোলাইটস, সুগার, ফেরিটিন",
     icon: Zap,
     color: "text-amber-600 dark:text-amber-400",
-    bgColor: "bg-amber-50 dark:bg-amber-950/40",
-    borderColor: "border-amber-200 dark:border-amber-900/40 hover:border-amber-400",
+    bgColor: "bg-amber-50/80 dark:bg-amber-950/30",
+    borderColor: "border-amber-200/60 dark:border-amber-900/40",
   },
   Hormone: {
     title_bn: "থাইরয়েড ও হরমোন",
     subtitle: "TSH, T3, T4, টেস্টোস্টেরন",
     icon: Activity,
     color: "text-purple-600 dark:text-purple-400",
-    bgColor: "bg-purple-50 dark:bg-purple-950/40",
-    borderColor: "border-purple-200 dark:border-purple-900/40 hover:border-purple-400",
+    bgColor: "bg-purple-50/80 dark:bg-purple-950/30",
+    borderColor: "border-purple-200/60 dark:border-purple-900/40",
   },
   "Urine Test": {
     title_bn: "ইউরিন ও কিডনি ফাংশন",
     subtitle: "Urine R/E, C/S, ইউরিয়া, ক্রিয়েটিনিন",
     icon: Beaker,
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/40",
-    borderColor: "border-blue-200 dark:border-blue-900/40 hover:border-blue-400",
+    color: "text-sky-600 dark:text-sky-400",
+    bgColor: "bg-sky-50/80 dark:bg-sky-950/30",
+    borderColor: "border-sky-200/60 dark:border-sky-900/40",
   },
   Cardiac: {
     title_bn: "হার্ট ও হৃদরোগ টেস্ট",
     subtitle: "ECG, 2D Echo, ETT, ডপলার",
     icon: HeartPulse,
-    color: "text-rose-600 dark:text-rose-400",
-    bgColor: "bg-rose-50 dark:bg-rose-950/40",
-    borderColor: "border-rose-200 dark:border-rose-900/40 hover:border-rose-400",
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-50/80 dark:bg-red-950/30",
+    borderColor: "border-red-200/60 dark:border-red-900/40",
   },
   USG: {
     title_bn: "আল্ট্রাসনোগ্রাম (USG)",
     subtitle: "হোল অ্যাবডোমেন, প্রেগন্যান্সি, থাইরয়েড",
     icon: Waves,
-    color: "text-cyan-600 dark:text-cyan-400",
-    bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
-    borderColor: "border-cyan-200 dark:border-cyan-900/40 hover:border-cyan-400",
+    color: "text-teal-600 dark:text-teal-400",
+    bgColor: "bg-teal-50/80 dark:bg-teal-950/30",
+    borderColor: "border-teal-200/60 dark:border-teal-900/40",
   },
   "CT Scan": {
     title_bn: "সিটি স্ক্যান (CT Scan)",
     subtitle: "ব্রেন, কন্ট্রাস্ট, KUB, অ্যাবডোমেন",
     icon: Scan,
     color: "text-indigo-600 dark:text-indigo-400",
-    bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
-    borderColor: "border-indigo-200 dark:border-indigo-900/40 hover:border-indigo-400",
+    bgColor: "bg-indigo-50/80 dark:bg-indigo-950/30",
+    borderColor: "border-indigo-200/60 dark:border-indigo-900/40",
   },
   MRI: {
     title_bn: "এমআরআই স্ক্যান (MRI)",
     subtitle: "ব্রেন, স্পাইন, অরবিট, MRCP",
     icon: Radio,
     color: "text-violet-600 dark:text-violet-400",
-    bgColor: "bg-violet-50 dark:bg-violet-950/40",
-    borderColor: "border-violet-200 dark:border-violet-900/40 hover:border-violet-400",
+    bgColor: "bg-violet-50/80 dark:bg-violet-950/30",
+    borderColor: "border-violet-200/60 dark:border-violet-900/40",
   },
   "X-Ray": {
     title_bn: "ডিজিটাল এক্স-রে",
     subtitle: "চেস্ট, স্পাইন, IVU, ম্যামোগ্রাফি",
     icon: Bone,
     color: "text-slate-700 dark:text-slate-300",
-    bgColor: "bg-slate-100 dark:bg-slate-800/40",
-    borderColor: "border-slate-200 dark:border-slate-700 hover:border-slate-400",
+    bgColor: "bg-slate-100 dark:bg-slate-800/60",
+    borderColor: "border-slate-200/80 dark:border-slate-700/60",
   },
   Endoscopy: {
     title_bn: "এন্ডোস্কোপি ও স্পেশাল",
     subtitle: "এন্ডোস্কোপি, কলোনোস্কোপি, স্পাইরোমেট্রি",
     icon: Stethoscope,
     color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
-    borderColor: "border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-400",
+    bgColor: "bg-emerald-50/80 dark:bg-emerald-950/30",
+    borderColor: "border-emerald-200/60 dark:border-emerald-900/40",
   },
   Immunology: {
     title_bn: "ইমিউনোলজি ও সেরোলজি",
     subtitle: "RA টেস্ট, রুবেলা, Rh অ্যান্টিবডি",
     icon: ShieldCheck,
-    color: "text-teal-600 dark:text-teal-400",
-    bgColor: "bg-teal-50 dark:bg-teal-950/40",
-    borderColor: "border-teal-200 dark:border-teal-900/40 hover:border-teal-400",
+    color: "text-cyan-600 dark:text-cyan-400",
+    bgColor: "bg-cyan-50/80 dark:bg-cyan-950/30",
+    borderColor: "border-cyan-200/60 dark:border-cyan-900/40",
   },
   Microbiology: {
     title_bn: "মাইক্রোবায়োলজি ও মল-কফ",
     subtitle: "সিমেন, স্টুল R/E, স্পুটাম AFB",
     icon: Microscope,
-    color: "text-lime-700 dark:text-lime-400",
-    bgColor: "bg-lime-50 dark:bg-lime-950/40",
-    borderColor: "border-lime-200 dark:border-lime-900/40 hover:border-lime-400",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bgColor: "bg-emerald-50/80 dark:bg-emerald-950/30",
+    borderColor: "border-emerald-200/60 dark:border-emerald-900/40",
   },
   "ICT Test": {
     title_bn: "আইসিটি র‍্যাপিড টেস্ট",
     subtitle: "ডেঙ্গু, ম্যালেরিয়া, কালাজ্বর, টিবি",
     icon: Sparkles,
     color: "text-orange-600 dark:text-orange-400",
-    bgColor: "bg-orange-50 dark:bg-orange-950/40",
-    borderColor: "border-orange-200 dark:border-orange-900/40 hover:border-orange-400",
+    bgColor: "bg-orange-50/80 dark:bg-orange-950/30",
+    borderColor: "border-orange-200/60 dark:border-orange-900/40",
   },
   "PCR/Viral": {
     title_bn: "পিসিআর ও ভাইরাল লোড",
     subtitle: "HBV-DNA, HCV-RNA মলিকুলার",
     icon: Dna,
     color: "text-fuchsia-600 dark:text-fuchsia-400",
-    bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
-    borderColor: "border-fuchsia-200 dark:border-fuchsia-900/40 hover:border-fuchsia-400",
+    bgColor: "bg-fuchsia-50/80 dark:bg-fuchsia-950/30",
+    borderColor: "border-fuchsia-200/60 dark:border-fuchsia-900/40",
   },
 };
 
@@ -646,17 +646,19 @@ const LabTest = () => {
         <div className="flex items-center justify-between gap-3 mb-4">
           <BackButton />
 
-          {/* Compact, Non-blocking Location Pill */}
+          {/* Compact, Classic Location Pill */}
           <button
             onClick={() => setIsLocationModalOpen(true)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 via-blue-50 to-emerald-50 dark:from-primary/20 dark:to-emerald-950/30 border border-primary/25 hover:border-primary/50 text-xs font-semibold text-primary transition-all shadow-xs hover:shadow-sm"
+            className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card hover:bg-muted/60 border border-border/80 hover:border-primary/50 text-xs font-medium text-foreground transition-all shadow-2xs hover:shadow-xs cursor-pointer"
           >
-            <MapPin className="h-3.5 w-3.5 text-primary animate-bounce shrink-0" />
-            <span className="text-muted-foreground font-normal hidden sm:inline">কালেকশন এলাকা:</span>
-            <span className="font-bold text-foreground max-w-[140px] sm:max-w-[200px] truncate">
+            <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <MapPin className="h-3 w-3 text-primary shrink-0" />
+            </div>
+            <span className="text-muted-foreground font-normal hidden sm:inline text-[11px]">কালেকশন এলাকা:</span>
+            <span className="font-bold text-foreground max-w-[140px] sm:max-w-[200px] truncate text-xs">
               {locationDisplay || "এলাকা নির্বাচন করুন"}
             </span>
-            <span className="text-[11px] underline ml-1 text-primary group-hover:text-blue-600 font-bold">পরিবর্তন</span>
+            <span className="text-[11px] font-semibold text-primary group-hover:underline ml-0.5">পরিবর্তন</span>
           </button>
         </div>
 
@@ -672,9 +674,9 @@ const LabTest = () => {
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
             <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] sm:text-xs font-bold text-white border border-white/30 shadow-xs">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] sm:text-xs font-semibold tracking-wide text-white border border-white/25 shadow-2xs">
                 <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                ডোরস্টেপ হোম স্যাম্পল কালেকশন সার্ভিস
+                <span>ডোরস্টেপ হোম স্যাম্পল কালেকশন সার্ভিস</span>
               </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
                 ঘরে বসেই ল্যাব টেস্ট করুন, সময় ও খরচ বাঁচান
@@ -686,11 +688,11 @@ const LabTest = () => {
 
             {/* Quick Stat Badges */}
             <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0">
-              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-semibold">
+              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-xs font-semibold shadow-2xs">
                 <Clock className="h-4 w-4 text-emerald-300 shrink-0" />
                 <span>১২-২৪ ঘণ্টায় রিপোর্ট</span>
               </div>
-              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-semibold">
+              <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-xs font-semibold shadow-2xs">
                 <ShieldCheck className="h-4 w-4 text-amber-300 shrink-0" />
                 <span>১০০% নিরাপদ ও স্টেরাইল</span>
               </div>
@@ -779,7 +781,8 @@ const LabTest = () => {
                   <HeartPulse className="h-5 w-5 text-rose-500" />
                   জনপ্রিয় স্বাস্থ্য চেকআপ প্যাকেজ (Health Packages)
                 </h2>
-                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-2xs">
+                  <Sparkles className="h-3 w-3 text-rose-500" />
                   Save Up to 35%
                 </span>
               </div>
@@ -793,15 +796,16 @@ const LabTest = () => {
             {HEALTH_PACKAGES.map((pkg) => (
               <div
                 key={pkg.id}
-                className="group relative flex flex-col justify-between rounded-2xl border-2 border-border/80 bg-card hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-4 overflow-hidden"
+                className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300 p-4 overflow-hidden"
               >
                 {/* Top badge */}
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 shadow-2xs">
+                    <Sparkles className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400" />
                     {pkg.badge}
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                    <Clock className="h-3 w-3" /> {pkg.reportTime}
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/60">
+                    <Clock className="h-2.5 w-2.5 text-emerald-600" /> {pkg.reportTime}
                   </span>
                 </div>
 
@@ -825,7 +829,7 @@ const LabTest = () => {
                   <div className="flex items-baseline gap-2 mb-3">
                     <span className="text-lg font-black text-primary">৳{pkg.offerPrice}</span>
                     <span className="text-xs text-muted-foreground line-through">৳{pkg.regularPrice}</span>
-                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.2 rounded">
+                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-900/40">
                       -{Math.round(((pkg.regularPrice - pkg.offerPrice) / pkg.regularPrice) * 100)}%
                     </span>
                   </div>
@@ -868,8 +872,8 @@ const LabTest = () => {
                   <button
                     key={c.id}
                     onClick={() => (isSelected ? clearCenter() : handleSelectCenter(c))}
-                    className={`flex-shrink-0 w-64 border-2 rounded-xl p-3 bg-card transition-all text-left shadow-xs ${
-                      isSelected ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20" : "border-border hover:border-primary/40"
+                    className={`flex-shrink-0 w-64 border rounded-xl p-3 bg-card transition-all text-left shadow-2xs ${
+                      isSelected ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30" : "border-border/80 hover:border-primary/40 hover:shadow-xs"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 mb-2">
@@ -882,7 +886,7 @@ const LabTest = () => {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold truncate text-foreground">{c.name}</p>
-                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md inline-block">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-primary/10 text-primary border border-primary/20">
                           {centerTypeLabel(c.type)}
                         </span>
                       </div>
@@ -1010,34 +1014,43 @@ const LabTest = () => {
                     key={cat}
                     type="button"
                     onClick={() => handleCategoryClick(cat)}
-                    className={`group relative flex flex-col items-center text-center p-3 sm:p-3.5 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${
+                    className={`group relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer ${
                       isSelected
-                        ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/30 scale-[1.02]"
-                        : `${meta.borderColor} ${meta.bgColor} hover:shadow-md hover:scale-[1.02] bg-card`
+                        ? "border-primary bg-gradient-to-b from-primary/[0.08] via-primary/[0.03] to-card shadow-md ring-1 ring-primary/30 scale-[1.02]"
+                        : "border-border/70 bg-card hover:bg-muted/30 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 shadow-2xs"
                     }`}
                   >
-                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center mb-2 transition-transform group-hover:scale-110 shadow-2xs ${meta.bgColor} ${meta.color} border border-border/40`}>
+                    <div
+                      className={`h-11 w-11 rounded-xl flex items-center justify-center mb-2.5 transition-all duration-300 group-hover:scale-110 shadow-2xs border ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                          : `${meta.bgColor} ${meta.color} ${meta.borderColor}`
+                      }`}
+                    >
                       <IconComp className="h-5 w-5" />
                     </div>
 
-                    <p className="text-xs sm:text-sm font-extrabold text-foreground leading-tight line-clamp-1 mb-0.5">
+                    <p className="text-xs sm:text-sm font-extrabold text-foreground leading-tight line-clamp-1 mb-0.5 group-hover:text-primary transition-colors">
                       {meta.title_bn}
                     </p>
                     <p className="text-[10px] text-muted-foreground font-medium truncate max-w-full">
                       {cat}
                     </p>
 
-                    <span className={`mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background/80 text-foreground border-border/60"
-                    }`}>
-                      {count} টি টেস্ট
+                    <span
+                      className={`mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide transition-all ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-xs border border-primary/40"
+                          : "bg-muted/60 text-muted-foreground border border-border/60 group-hover:border-primary/30 group-hover:text-foreground group-hover:bg-primary/[0.04]"
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isSelected ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                      <span>{count} টি টেস্ট</span>
                     </span>
 
                     {isSelected && (
-                      <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary text-white flex items-center justify-center shadow-xs">
-                        <Check className="h-3 w-3 stroke-[3]" />
+                      <div className="absolute top-2.5 right-2.5 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+                        <Check className="h-2.5 w-2.5 stroke-[3]" />
                       </div>
                     )}
                   </button>
@@ -1054,9 +1067,9 @@ const LabTest = () => {
             const activeMeta = getCategoryMeta(selectedCategory);
             const ActiveIcon = activeMeta.icon;
             return (
-              <div className="mb-5 p-4 rounded-2xl border-2 border-primary/30 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="mb-5 p-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.06] via-primary/[0.03] to-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
-                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${activeMeta.bgColor} ${activeMeta.color} border border-border/40 shrink-0 shadow-xs`}>
+                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-primary text-primary-foreground border border-primary/30 shrink-0 shadow-sm shadow-primary/20">
                     <ActiveIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -1064,11 +1077,12 @@ const LabTest = () => {
                       <h3 className="text-sm sm:text-base font-extrabold text-foreground">
                         {activeMeta.title_bn}
                       </h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/25">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 shadow-2xs">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                         {selectedCategory}
                       </span>
-                      <span className="text-xs font-black text-emerald-600">
-                        • {filtered.length} টি টেস্ট
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        • {filtered.length} টি টেস্ট উপলব্ধ
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -1082,7 +1096,7 @@ const LabTest = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedCategory("all")}
-                    className="font-bold text-xs rounded-xl border-primary/40 text-primary hover:bg-primary hover:text-white"
+                    className="font-bold text-xs rounded-xl border-border hover:border-primary/40 text-foreground hover:bg-primary hover:text-white transition-all"
                   >
                     <X className="h-3.5 w-3.5 mr-1" />
                     সব ক্যাটাগরি দেখুন ({availableTests.length})
@@ -1093,31 +1107,42 @@ const LabTest = () => {
           })()}
 
           {/* Horizontal Quick Switch Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-hide p-1.5 bg-muted/40 dark:bg-muted/20 rounded-2xl border border-border/50">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                 selectedCategory === "all"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-foreground text-background shadow-xs font-bold"
+                  : "bg-card text-muted-foreground hover:text-foreground hover:bg-card/90 border border-border/60 shadow-2xs font-medium"
               }`}
             >
               <Beaker className="h-3.5 w-3.5" />
-              সকল টেস্ট ({availableTests.length})
+              <span>সকল টেস্ট</span>
+              <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                selectedCategory === "all" ? "bg-background/20 text-background" : "bg-muted text-muted-foreground"
+              }`}>
+                {availableTests.length}
+              </span>
             </button>
             {categories.map((cat) => {
               const count = availableTests.filter((t) => t.category === cat).length;
+              const isCatSelected = selectedCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-                    selectedCategory === cat
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                    isCatSelected
+                      ? "bg-foreground text-background shadow-xs font-bold"
+                      : "bg-card text-muted-foreground hover:text-foreground hover:bg-card/90 border border-border/60 shadow-2xs font-medium"
                   }`}
                 >
-                  {cat} <span className="opacity-75 font-normal ml-0.5">({count})</span>
+                  <span>{cat}</span>
+                  <span className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isCatSelected ? "bg-background/20 text-background" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -1189,7 +1214,7 @@ const LabTest = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {popularTests.map((t) => {
                       const isSelected = selectedTests.has(t.id);
                       const price = getTestPrice(t.id, t.price);
@@ -1197,29 +1222,36 @@ const LabTest = () => {
                         <button
                           key={t.id}
                           onClick={() => toggleTest(t.id)}
-                          className={`flex flex-col justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                          className={`flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer ${
                             isSelected
-                              ? "border-primary bg-primary/10 shadow-sm"
-                              : "border-border bg-card hover:border-primary/40 shadow-2xs"
+                              ? "border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary/30"
+                              : "border-border/80 bg-card hover:border-primary/40 hover:shadow-xs shadow-2xs"
                           }`}
                         >
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-2xs">
+                                <span className="h-1 w-1 rounded-full bg-primary" />
                                 {t.category || "ল্যাব"}
                               </span>
-                              {isSelected && <Check className="h-4 w-4 text-primary stroke-[3]" />}
+                              {isSelected && (
+                                <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+                                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs font-extrabold text-foreground line-clamp-1">{t.name}</p>
-                            {t.name_bn && <p className="text-[10px] text-muted-foreground truncate">{t.name_bn}</p>}
+                            {t.name_bn && <p className="text-[10px] text-muted-foreground truncate mt-0.5">{t.name_bn}</p>}
                           </div>
 
-                          <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
-                            <span className="text-xs font-black text-primary">৳{price}</span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                          <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between">
+                            <span className="text-sm font-black text-primary">৳{price}</span>
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground shadow-2xs"
+                                : "bg-muted/80 hover:bg-primary hover:text-white text-foreground"
                             }`}>
-                              {isSelected ? "যুক্ত হয়েছে" : "+ যোগ"}
+                              {isSelected ? "✓ নির্বাচিত" : "+ যোগ"}
                             </span>
                           </div>
                         </button>
@@ -1271,31 +1303,34 @@ const LabTest = () => {
                       return (
                         <div
                           key={t.id}
-                          className={`flex flex-col justify-between p-3.5 rounded-xl border-2 transition-all ${
+                          className={`flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 ${
                             isSelected
-                              ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30"
-                              : "border-border bg-card hover:border-primary/40 shadow-xs"
+                              ? "border-primary bg-gradient-to-b from-primary/[0.06] to-card shadow-sm ring-1 ring-primary/30"
+                              : "border-border/80 bg-card hover:border-primary/40 hover:shadow-xs shadow-2xs"
                           }`}
                         >
                           <div>
-                            <div className="flex items-center justify-between gap-1 mb-1.5">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                            <div className="flex items-center justify-between gap-1.5 mb-2.5 flex-wrap">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                                <span className="h-1 w-1 rounded-full bg-primary" />
                                 {t.category || "Pathology"}
                               </span>
-                              {isGovt && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
-                                  সরকারি রেট
+                              <div className="flex items-center gap-1.5 ml-auto">
+                                {isGovt && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 shadow-2xs">
+                                    <ShieldCheck className="h-2.5 w-2.5 text-emerald-600" /> সরকারি রেট
+                                  </span>
+                                )}
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/60">
+                                  <Clock className="h-2.5 w-2.5 text-emerald-600" /> ১২-২৪ ঘণ্টা
                                 </span>
-                              )}
-                              <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> ১২-২৪ ঘণ্টা
-                              </span>
+                              </div>
                             </div>
 
                             <h3 className="text-sm font-bold text-foreground leading-snug">{t.name}</h3>
                             {t.name_bn && <p className="text-xs text-muted-foreground mt-0.5">{t.name_bn}</p>}
 
-                            <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                            <div className="flex items-center gap-2 mt-2.5 text-[10px] text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <ShieldCheck className="h-3 w-3 text-emerald-500" /> হোম কালেকশন
                               </span>
@@ -1304,7 +1339,7 @@ const LabTest = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                          <div className="mt-3.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
                             <div>
                               <span className="text-base font-black text-primary">৳{price}</span>
                             </div>
@@ -1312,10 +1347,10 @@ const LabTest = () => {
                             <Button
                               size="sm"
                               onClick={() => toggleTest(t.id)}
-                              className={`h-8 px-3 rounded-lg font-bold text-xs transition-all ${
+                              className={`h-8 px-3 rounded-xl font-bold text-xs transition-all ${
                                 isSelected
                                   ? "bg-primary text-primary-foreground shadow-xs"
-                                  : "bg-muted hover:bg-primary hover:text-primary-foreground text-foreground"
+                                  : "bg-muted/80 hover:bg-primary hover:text-primary-foreground text-foreground"
                               }`}
                             >
                               {isSelected ? (
