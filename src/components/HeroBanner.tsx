@@ -16,30 +16,57 @@ export interface HeroSlide {
 
 export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   {
-    id: "default-slide-1",
-    title: "অরিজিনাল ওষুধ ও স্বাস্থ্যসেবা",
-    subtitle: "১০০% খাঁটি ও বিশ্বস্ত ওষুধ, ঘরে বসেই দ্রুততম হোম ডেলিভারি",
-    image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80",
-    link_url: "/categories",
-    sort_order: 1,
-    is_active: true,
-  },
-  {
-    id: "default-slide-2",
-    title: "ল্যাব টেস্ট বুকিং এ আকর্ষণীয় ছাড়",
-    subtitle: "শীর্ষ ডায়াগনস্টিক সেন্টারে হোম স্যাম্পল কালেকশন ও ডিজিটাল রিপোর্ট",
-    image_url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1200&auto=format&fit=crop&q=80",
-    link_url: "/lab-test",
+    id: "10936688-552c-4dd7-8ab0-e7f8bc5d74ad",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478392330.png",
+    link_url: null,
     sort_order: 2,
     is_active: true,
   },
   {
-    id: "default-slide-3",
-    title: "সহজ প্রেসক্রিপশন আপলোড",
-    subtitle: "প্রেসক্রিপশনের ছবি তুলে আপলোড করুন, আমাদের রেজিস্টার্ড ফার্মাসিস্ট বাকিটা বুঝে নেবেন",
-    image_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&auto=format&fit=crop&q=80",
-    link_url: "/prescription",
+    id: "45c77f0e-334e-4d6d-9a6c-8bc1f4c4fe54",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478408458.png",
+    link_url: null,
     sort_order: 3,
+    is_active: true,
+  },
+  {
+    id: "bfe99941-2a1e-4200-8299-9f81c2888661",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478629810.png",
+    link_url: null,
+    sort_order: 4,
+    is_active: true,
+  },
+  {
+    id: "c6729479-39b6-47a2-b6c8-58ab57bfd37e",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478671915.png",
+    link_url: null,
+    sort_order: 5,
+    is_active: true,
+  },
+  {
+    id: "b81553d4-1610-4556-8cf7-ea4be72e48ac",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478688105.png",
+    link_url: null,
+    sort_order: 5,
+    is_active: true,
+  },
+  {
+    id: "d6abb8af-69ac-43ed-80bf-ad519fde9bcf",
+    title: null,
+    subtitle: null,
+    image_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/hero-slides/1773478711450.png",
+    link_url: null,
+    sort_order: 6,
     is_active: true,
   },
 ];
@@ -52,13 +79,11 @@ const getStoredHeroSlides = (): HeroSlide[] => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.image_url?.includes("hero-slides")) {
         return parsed;
       }
     }
-  } catch (err) {
-    console.warn("Error reading stored hero slides:", err);
-  }
+  } catch {}
   return DEFAULT_HERO_SLIDES;
 };
 

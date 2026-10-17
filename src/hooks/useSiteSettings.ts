@@ -19,20 +19,20 @@ export interface SiteSettings {
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
-  id: "default-settings",
-  site_name: "শেখ ফার্মা",
-  site_title: "শেখ ফার্মা — মডেল ফার্মেসি ও হেলথকেয়ার",
-  logo_url: "/pwa-192.png",
-  favicon_url: "/favicon.ico",
-  primary_color: "#0F3577",
-  background_color: "#ffffff",
-  foreground_color: "#0f172a",
-  card_color: "#ffffff",
-  accent_color: "#0284c7",
-  border_color: "#e2e8f0",
-  muted_color: "#f1f5f9",
-  is_multivendor: true,
-  updated_at: new Date().toISOString(),
+  id: "41fe698d-fda6-4bee-ae1a-0c102e60b59f",
+  site_name: "Sheikh Pharma",
+  site_title: "Sheikh Pharma - Online Pharmacy",
+  logo_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/product-images/site/site-logo-1773477536405.jpg",
+  favicon_url: "https://vkfloynvxqkxbqpdlzbd.supabase.co/storage/v1/object/public/product-images/site/site-favicon-1773477549370.jpg",
+  primary_color: "231 72% 56%",
+  background_color: "152 30% 96%",
+  foreground_color: "160 30% 10%",
+  card_color: "0 0% 100%",
+  accent_color: "160 84% 39%",
+  border_color: "155 18% 89%",
+  muted_color: "155 12% 65%",
+  is_multivendor: false,
+  updated_at: "2026-03-14T08:33:45.409243+00:00",
 };
 
 const STORAGE_KEY = "sheikhpharma_site_settings";
@@ -43,13 +43,11 @@ const getStoredSettings = (): SiteSettings => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") {
+      if (parsed && typeof parsed === "object" && parsed.site_name === "Sheikh Pharma" && parsed.logo_url?.startsWith("http")) {
         return { ...DEFAULT_SITE_SETTINGS, ...parsed };
       }
     }
-  } catch (err) {
-    console.warn("Error reading cached site settings:", err);
-  }
+  } catch {}
   return DEFAULT_SITE_SETTINGS;
 };
 
@@ -84,6 +82,6 @@ export const useSiteSettings = () => {
       }
     },
     initialData: getStoredSettings,
-    staleTime: 1000 * 60 * 10, // 10 minutes cache freshness
+    staleTime: 1000 * 60 * 10,
   });
 };
