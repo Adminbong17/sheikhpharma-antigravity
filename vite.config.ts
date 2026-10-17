@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes("@radix-ui")) return "vendor-radix";
             if (id.includes("@tanstack")) return "vendor-query";
             if (id.includes("date-fns")) return "vendor-date";
+            if (id.includes("lucide-react")) return "vendor-lucide";
             if (
               id.includes("react-router-dom") ||
               id.includes("react-router") ||

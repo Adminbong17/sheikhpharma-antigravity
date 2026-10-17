@@ -183,14 +183,14 @@ const SiteColorApplier = () => {
   return null;
 };
 
-// Optimized QueryClient with sensible caching to avoid constant refetches
+// Optimized QueryClient with sensible caching and no retry delays
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 3, // 3 minutes data freshness
-      gcTime: 1000 * 60 * 15,   // 15 minutes cache memory
+      staleTime: 1000 * 60 * 5, // 5 minutes data freshness
+      gcTime: 1000 * 60 * 60,   // 1 hour cache memory
       refetchOnWindowFocus: false, // Prevents sudden network spikes on tab focus
-      retry: 1,
+      retry: 0, // Do not stall the UI with retries if network or DB is slow
     },
   },
 });

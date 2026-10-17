@@ -16,14 +16,18 @@ const TopVendors = () => {
   const { data: vendors = [] } = useQuery({
     queryKey: ["homepage-vendors"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("id, store_name, logo_url")
-        .eq("status", "approved")
-        .order("total_earnings", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from("vendors")
+          .select("id, store_name, logo_url")
+          .eq("status", "approved")
+          .order("total_earnings", { ascending: false })
+          .limit(20);
+        if (error) return [];
+        return data || [];
+      } catch {
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 30,
   });

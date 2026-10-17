@@ -399,26 +399,26 @@ const Navbar = () => {
           <div className="flex items-center justify-between gap-4 h-16">
             {/* Brand Logo & Name */}
             <Link to="/" className="shrink-0 flex items-center gap-3 group">
-              {siteSettings?.logo_url ? (
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-white/20 rounded-full blur-sm group-hover:bg-white/30 transition-all duration-300" />
-                  <img
-                    src={siteSettings.logo_url}
-                    alt={siteSettings.site_name || "Sheikh Pharma"}
-                    className="h-10 w-10 rounded-full object-cover ring-2 ring-white/80 shadow-md relative z-10 group-hover:scale-105 transition-transform"
-                  />
-                </div>
-              ) : (
-                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-white shadow-md">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-              )}
+              <div className="relative">
+                <div className="absolute -inset-1 bg-white/20 rounded-full blur-sm group-hover:bg-white/30 transition-all duration-300" />
+                <img
+                  src={siteSettings?.logo_url || "/pwa-192.png"}
+                  alt={siteSettings?.site_name || "Sheikh Pharma"}
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-white/80 shadow-md relative z-10 group-hover:scale-105 transition-transform bg-white/10"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.endsWith("/pwa-192.png")) {
+                      target.src = "/pwa-192.png";
+                    }
+                  }}
+                />
+              </div>
               <div className="flex flex-col">
                 <span className="text-lg lg:text-xl font-bold tracking-tight text-white leading-tight drop-shadow-sm group-hover:text-blue-100 transition-colors">
-                  {siteSettings?.site_name || "Sheikh Pharma"}
+                  {siteSettings?.site_name || "শেখ ফার্মা"}
                 </span>
                 <span className="text-[10px] text-blue-200/90 font-semibold tracking-wide">
-                  {t("common.model_pharmacy", "Model Pharmacy & Health")}
+                  {t("common.model_pharmacy", "মডেল ফার্মেসি ও হেলথকেয়ার")}
                 </span>
               </div>
             </Link>
@@ -468,15 +468,19 @@ const Navbar = () => {
           {/* Mobile Top Row: Logo on left, Actions on right */}
           <div className="flex items-center justify-between gap-2">
             <Link to="/" className="flex items-center gap-2 group min-w-0">
-              {siteSettings?.logo_url && (
-                <img
-                  src={siteSettings.logo_url}
-                  alt={siteSettings.site_name || "Sheikh Pharma"}
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-white/70 shadow-sm shrink-0"
-                />
-              )}
+              <img
+                src={siteSettings?.logo_url || "/pwa-192.png"}
+                alt={siteSettings?.site_name || "Sheikh Pharma"}
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-white/70 shadow-sm shrink-0 bg-white/10"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.endsWith("/pwa-192.png")) {
+                    target.src = "/pwa-192.png";
+                  }
+                }}
+              />
               <span className="text-base font-bold tracking-tight text-white truncate drop-shadow-sm">
-                {siteSettings?.site_name || "Sheikh Pharma"}
+                {siteSettings?.site_name || "শেখ ফার্মা"}
               </span>
             </Link>
 

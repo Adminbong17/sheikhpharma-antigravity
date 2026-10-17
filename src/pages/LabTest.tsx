@@ -95,6 +95,55 @@ interface CenterTestAssignment {
   govt_price: number;
 }
 
+export const DEFAULT_LAB_TESTS: LabTestItem[] = [
+  { id: "lt-1", name: "Complete Blood Count (CBC)", name_bn: "সিবিসি (রক্তের সাধারণ পরীক্ষা)", price: 400, category: "Hematology", is_popular: true },
+  { id: "lt-2", name: "Serum Creatinine", name_bn: "সিরাম ক্রিয়েটিনিন (কিডনি পরীক্ষা)", price: 350, category: "Biochemistry", is_popular: true },
+  { id: "lt-3", name: "Fasting Blood Sugar (FBS)", name_bn: "রক্তের শর্করা (খালি পেটে)", price: 150, category: "Biochemistry", is_popular: true },
+  { id: "lt-4", name: "HbA1c (Glycated Hemoglobin)", name_bn: "এইচবিএ১সি (৩ মাসের গড় সুগার)", price: 900, category: "Biochemistry", is_popular: true },
+  { id: "lt-5", name: "Lipid Profile (Cholesterol)", name_bn: "লিপিড প্রোফাইল (রক্তের চর্বি)", price: 1000, category: "Biochemistry", is_popular: true },
+  { id: "lt-6", name: "Urine Routine Examination (R/E)", name_bn: "প্রস্রাবের সাধারণ পরীক্ষা", price: 200, category: "Clinical Pathology", is_popular: true },
+  { id: "lt-7", name: "Serum Bilirubin", name_bn: "বিলিরুবিন (জন্ডিস পরীক্ষা)", price: 300, category: "Biochemistry", is_popular: true },
+  { id: "lt-8", name: "SGPT / ALT", name_bn: "এসজিপিটি (লিভার ফাংশন)", price: 400, category: "Biochemistry", is_popular: true },
+  { id: "lt-9", name: "Thyroid Stimulating Hormone (TSH)", name_bn: "থাইরয়েড হরমোন (TSH)", price: 650, category: "Immunology", is_popular: true },
+  { id: "lt-10", name: "Serum Electrolytes (Na, K, Cl)", name_bn: "ইলেক্ট্রোলাইটস", price: 850, category: "Biochemistry", is_popular: true },
+  { id: "lt-11", name: "Uric Acid", name_bn: "ইউরিক অ্যাসিড", price: 350, category: "Biochemistry", is_popular: true },
+  { id: "lt-12", name: "Blood Grouping & Rh Factor", name_bn: "ব্লাড গ্রুপিং ও আরএইচ ফ্যাক্টর", price: 150, category: "Hematology", is_popular: true },
+];
+
+export const DEFAULT_LAB_CENTERS: LabCenter[] = [
+  { id: "lc-1", name: "Popular Diagnostic Centre", type: "diagnostic", phone: "09613787801", address: "Dhanmondi, Dhaka", logo_url: null, division: "Dhaka", zilla: "Dhaka", upazilla: "Dhanmondi" },
+  { id: "lc-2", name: "Ibn Sina Diagnostic Center", type: "diagnostic", phone: "09610009610", address: "Dhanmondi, Dhaka", logo_url: null, division: "Dhaka", zilla: "Dhaka", upazilla: "Dhanmondi" },
+  { id: "lc-3", name: "Labaid Diagnostic", type: "diagnostic", phone: "10606", address: "Gulshan, Dhaka", logo_url: null, division: "Dhaka", zilla: "Dhaka", upazilla: "Gulshan" },
+  { id: "lc-4", name: "Square Hospital Lab", type: "hospital", phone: "10616", address: "Panthapath, Dhaka", logo_url: null, division: "Dhaka", zilla: "Dhaka", upazilla: "Tejgaon" },
+];
+
+const LAB_TESTS_STORAGE_KEY = "sheikhpharma_cached_lab_tests";
+const LAB_CENTERS_STORAGE_KEY = "sheikhpharma_cached_lab_centers";
+
+const getStoredLabTests = (): LabTestItem[] => {
+  if (typeof window === "undefined") return DEFAULT_LAB_TESTS;
+  try {
+    const raw = localStorage.getItem(LAB_TESTS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return DEFAULT_LAB_TESTS;
+};
+
+const getStoredLabCenters = (): LabCenter[] => {
+  if (typeof window === "undefined") return DEFAULT_LAB_CENTERS;
+  try {
+    const raw = localStorage.getItem(LAB_CENTERS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return DEFAULT_LAB_CENTERS;
+};
+
 // Curated high-converting preventive health packages
 interface HealthPackage {
   id: string;
@@ -313,8 +362,8 @@ const LabTest = () => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTests, setSelectedTests] = useState<Set<string>>(new Set());
-  const [labTests, setLabTests] = useState<LabTestItem[]>([]);
-  const [loadingTests, setLoadingTests] = useState(true);
+  const [labTests, setLabTests] = useState<LabTestItem[]>(() => getStoredLabTests());
+  const [loadingTests, setLoadingTests] = useState(false);
   const [showAllTestsList, setShowAllTestsList] = useState(false);
   const testsListRef = useRef<HTMLDivElement>(null);
 
@@ -346,7 +395,7 @@ const LabTest = () => {
   });
 
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
-  const [labCenters, setLabCenters] = useState<LabCenter[]>([]);
+  const [labCenters, setLabCenters] = useState<LabCenter[]>(() => getStoredLabCenters());
   const [selectedCenter, setSelectedCenter] = useState<LabCenter | null>(null);
   const [selectedCenterType, setSelectedCenterType] = useState<string>("all");
   const [centerTestAssignments, setCenterTestAssignments] = useState<CenterTestAssignment[]>([]);
@@ -378,17 +427,45 @@ const LabTest = () => {
   }, [selectedDivision, selectedZilla, selectedUpazilla]);
 
   useEffect(() => {
-    (supabase.from("delivery_zones" as any) as any).select("*").eq("is_active", true).then(({ data }: any) => {
-      if (data) setDeliveryZones(data as DeliveryZone[]);
-    });
-    setLoadingTests(true);
-    (supabase.from("lab_tests" as any) as any).select("*").eq("is_active", true).order("sort_order").then(({ data }: any) => {
-      if (data) setLabTests(data as LabTestItem[]);
-      setLoadingTests(false);
-    });
-    (supabase.from("lab_centers" as any) as any).select("*").eq("is_active", true).order("sort_order").then(({ data }: any) => {
-      if (data) setLabCenters(data as LabCenter[]);
-    });
+    try {
+      (supabase.from("delivery_zones" as any) as any)
+        .select("*")
+        .eq("is_active", true)
+        .then(({ data }: any) => {
+          if (data && data.length > 0) setDeliveryZones(data as DeliveryZone[]);
+        })
+        .catch(() => {});
+
+      (supabase.from("lab_tests" as any) as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order")
+        .then(({ data }: any) => {
+          if (data && data.length > 0) {
+            setLabTests(data as LabTestItem[]);
+            try {
+              localStorage.setItem(LAB_TESTS_STORAGE_KEY, JSON.stringify(data));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+
+      (supabase.from("lab_centers" as any) as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order")
+        .then(({ data }: any) => {
+          if (data && data.length > 0) {
+            setLabCenters(data as LabCenter[]);
+            try {
+              localStorage.setItem(LAB_CENTERS_STORAGE_KEY, JSON.stringify(data));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // Fallback already loaded
+    }
   }, []);
 
   const divisions = useMemo(() => [...new Set(deliveryZones.map((z) => z.division))].sort(), [deliveryZones]);

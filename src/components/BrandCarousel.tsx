@@ -12,22 +12,54 @@ const CARD_COLORS = [
   "border-indigo-500", "border-cyan-500",
 ];
 
+export const DEFAULT_BRANDS = [
+  { id: "square", name: "Square Pharma", logo_url: null },
+  { id: "beximco", name: "Beximco Pharma", logo_url: null },
+  { id: "incepta", name: "Incepta Pharma", logo_url: null },
+  { id: "renata", name: "Renata Limited", logo_url: null },
+  { id: "healthcare", name: "Healthcare Pharma", logo_url: null },
+  { id: "acme", name: "The ACME Labs", logo_url: null },
+  { id: "skf", name: "Eskayef (SK+F)", logo_url: null },
+  { id: "popular", name: "Popular Pharma", logo_url: null },
+];
+
+const STORAGE_KEY = "sheikhpharma_brands";
+
+const getStoredBrands = () => {
+  if (typeof window === "undefined") return DEFAULT_BRANDS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return DEFAULT_BRANDS;
+};
+
 const BrandCarousel = () => {
   const { b } = useLanguage();
-  const { data: brands = [] } = useQuery({
+  const { data: brands = DEFAULT_BRANDS } = useQuery({
     queryKey: ["homepage-brands"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, name, logo_url")
-        .eq("status", "approved")
-        .eq("is_active", true)
-        .not("logo_url", "is", null)
-        .order("name")
-        .limit(24);
-      if (error) throw error;
-      return (data || []).filter((b: any) => Boolean(b.logo_url && b.logo_url.trim() !== ""));
+      try {
+        const { data, error } = await supabase
+          .from("brands")
+          .select("id, name, logo_url")
+          .eq("status", "approved")
+          .eq("is_active", true)
+          .order("name")
+          .limit(24);
+        if (error || !data || data.length === 0) return getStoredBrands();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+        return data;
+      } catch {
+        return getStoredBrands();
+      }
     },
+    initialData: getStoredBrands,
     staleTime: 1000 * 60 * 30,
   });
 
@@ -57,11 +89,11 @@ const BrandCarousel = () => {
                 {b_item.logo_url ? (
                   <img src={b_item.logo_url} alt={b_item.name} className="h-12 w-12 rounded-lg object-contain" />
                 ) : (
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                    {b_item.name[0]}
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary text-center px-1">
+                    {b_item.name.slice(0, 8)}
                   </div>
                 )}
-                <span className="text-xs font-medium text-center leading-tight">{b_item.name}</span>
+                <span className="text-xs font-semibold text-center line-clamp-1">{b_item.name}</span>
               </Link>
             ))}
           </div>

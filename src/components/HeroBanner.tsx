@@ -2,8 +2,65 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+
+export interface HeroSlide {
+  id: string;
+  title?: string | null;
+  subtitle?: string | null;
+  image_url: string;
+  link_url?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: "default-slide-1",
+    title: "অরিজিনাল ওষুধ ও স্বাস্থ্যসেবা",
+    subtitle: "১০০% খাঁটি ও বিশ্বস্ত ওষুধ, ঘরে বসেই দ্রুততম হোম ডেলিভারি",
+    image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80",
+    link_url: "/categories",
+    sort_order: 1,
+    is_active: true,
+  },
+  {
+    id: "default-slide-2",
+    title: "ল্যাব টেস্ট বুকিং এ আকর্ষণীয় ছাড়",
+    subtitle: "শীর্ষ ডায়াগনস্টিক সেন্টারে হোম স্যাম্পল কালেকশন ও ডিজিটাল রিপোর্ট",
+    image_url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1200&auto=format&fit=crop&q=80",
+    link_url: "/lab-test",
+    sort_order: 2,
+    is_active: true,
+  },
+  {
+    id: "default-slide-3",
+    title: "সহজ প্রেসক্রিপশন আপলোড",
+    subtitle: "প্রেসক্রিপশনের ছবি তুলে আপলোড করুন, আমাদের রেজিস্টার্ড ফার্মাসিস্ট বাকিটা বুঝে নেবেন",
+    image_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&auto=format&fit=crop&q=80",
+    link_url: "/prescription",
+    sort_order: 3,
+    is_active: true,
+  },
+];
+
+const STORAGE_KEY = "sheikhpharma_hero_slides";
+
+const getStoredHeroSlides = (): HeroSlide[] => {
+  if (typeof window === "undefined") return DEFAULT_HERO_SLIDES;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn("Error reading stored hero slides:", err);
+  }
+  return DEFAULT_HERO_SLIDES;
+};
 
 const HeroBanner = () => {
   const [current, setCurrent] = useState(0);
@@ -12,20 +69,36 @@ const HeroBanner = () => {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  const { data: slides = [], isLoading } = useQuery({
+  const { data: slides = DEFAULT_HERO_SLIDES } = useQuery({
     queryKey: ["hero-slides"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hero_slides")
-        .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) {
-        console.error("Error fetching hero slides:", error);
+      try {
+        const { data, error } = await supabase
+          .from("hero_slides")
+          .select("id, title, subtitle, image_url, link_url, sort_order, is_active")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+
+        if (error) {
+          console.warn("Could not fetch hero slides from DB, using fallback:", error.message);
+          return getStoredHeroSlides();
+        }
+
+        if (data && data.length > 0) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+
+        return getStoredHeroSlides();
+      } catch (err) {
+        console.warn("Failed to fetch hero slides, using fallback:", err);
+        return getStoredHeroSlides();
       }
-      return data || [];
     },
-    staleTime: 1000 * 60 * 30,
+    initialData: getStoredHeroSlides,
+    staleTime: 1000 * 60 * 15,
   });
 
   const next = useCallback(() => {
@@ -53,7 +126,7 @@ const HeroBanner = () => {
   // Autoplay with pause on hover/touch
   useEffect(() => {
     if (slides.length <= 1 || isPaused) return;
-    const timer = setInterval(next, 3800);
+    const timer = setInterval(next, 4200);
     return () => clearInterval(timer);
   }, [next, slides.length, isPaused]);
 
@@ -79,34 +152,6 @@ const HeroBanner = () => {
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
-
-  if (isLoading) {
-    return (
-      <div className="w-full">
-        <Skeleton className="w-full rounded-xl sm:rounded-2xl aspect-[1000/432]" />
-      </div>
-    );
-  }
-
-  if (slides.length === 0) {
-    return (
-      <div className="w-full">
-        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary via-emerald-600 to-teal-700 p-6 md:p-12 shadow-lg ring-1 ring-white/20 aspect-[1000/432] flex items-center">
-          <div className="relative z-10 max-w-md text-white">
-            <p className="mb-1 text-xs font-bold uppercase tracking-widest opacity-90">Sheikh Pharma</p>
-            <h1 className="mb-2 text-2xl font-black md:text-4xl">অরিজিনাল ওষুধ ও স্বাস্থ্যসেবা</h1>
-            <p className="mb-4 text-xs md:text-base opacity-90">দ্রুততম সময়ে সারা দেশে হোম ডেলিভারি</p>
-            <Link
-              to="/categories"
-              className="inline-block rounded-full bg-white text-emerald-800 px-5 py-2 font-bold text-xs md:text-sm shadow-md transition hover:bg-white/90"
-            >
-              এখনই অর্ডার করুন
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const activeIndex = current % slides.length;
 
@@ -141,15 +186,15 @@ const HeroBanner = () => {
               <img
                 src={s.image_url}
                 alt={s.title || "Poster"}
-                className="w-full h-full object-contain sm:object-cover pointer-events-none select-none transition-all duration-300"
+                className="w-full h-full object-cover pointer-events-none select-none transition-all duration-300"
                 loading={idx === 0 ? "eager" : "lazy"}
                 draggable={false}
               />
               {(s.title || s.subtitle) && (
-                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4 sm:p-6 pointer-events-none">
-                  <div className="text-white drop-shadow-md">
-                    {s.title && <h2 className="text-lg sm:text-2xl font-bold">{s.title}</h2>}
-                    {s.subtitle && <p className="text-xs sm:text-sm opacity-90">{s.subtitle}</p>}
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 sm:p-6 pointer-events-none">
+                  <div className="text-white drop-shadow-md max-w-lg">
+                    {s.title && <h2 className="text-base sm:text-2xl font-bold leading-tight mb-1">{s.title}</h2>}
+                    {s.subtitle && <p className="text-xs sm:text-sm opacity-90 line-clamp-2 leading-relaxed">{s.subtitle}</p>}
                   </div>
                 </div>
               )}
@@ -184,7 +229,7 @@ const HeroBanner = () => {
         </>
       )}
 
-      {/* Mobile Badge Counter (Does NOT block poster text!) */}
+      {/* Mobile Badge Counter */}
       {slides.length > 1 && (
         <div className="sm:hidden absolute bottom-2 right-2 z-10">
           <div className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white tracking-widest ring-1 ring-white/20 shadow-sm">
@@ -193,7 +238,7 @@ const HeroBanner = () => {
         </div>
       )}
 
-      {/* Desktop Dots Indicator (Centered at bottom, slim and modern) */}
+      {/* Desktop Dots Indicator */}
       {slides.length > 1 && (
         <div className="hidden sm:flex absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 gap-1.5 px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-md ring-1 ring-white/20">
           {slides.map((_, i) => (

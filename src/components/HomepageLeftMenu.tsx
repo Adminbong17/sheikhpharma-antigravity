@@ -14,6 +14,28 @@ type MenuItem = {
   bg_color: string | null;
 };
 
+export const DEFAULT_MENU_ITEMS: MenuItem[] = [
+  { id: "m-1", name: "প্রেসক্রিপশন আপলোড", icon: "📋", image_url: null, sort_order: 1, link_url: "/prescription", use_link: true, bg_color: null },
+  { id: "m-2", name: "ল্যাব টেস্ট বুকিং", icon: "🧪", image_url: null, sort_order: 2, link_url: "/lab-test", use_link: true, bg_color: null },
+  { id: "m-3", name: "বিশেষজ্ঞ চিকিৎসক", icon: "👨‍⚕️", image_url: null, sort_order: 3, link_url: "/specialist-doctors", use_link: true, bg_color: null },
+  { id: "m-4", name: "ব্লাড ব্যাংক", icon: "🩸", image_url: null, sort_order: 4, link_url: "/blood-bank", use_link: true, bg_color: null },
+  { id: "m-5", name: "জরুরি সেবা (২৪/৭)", icon: "🚨", image_url: null, sort_order: 5, link_url: "/emergency", use_link: true, bg_color: null },
+];
+
+const STORAGE_KEY = "sheikhpharma_left_menu";
+
+const getStoredMenuItems = (): MenuItem[] => {
+  if (typeof window === "undefined") return DEFAULT_MENU_ITEMS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return DEFAULT_MENU_ITEMS;
+};
+
 // Colorful gradient palette cycled per item (used as fallback when no bg_color)
 const gradientPalette = [
   "from-rose-500 via-pink-500 to-fuchsia-500",
@@ -68,24 +90,32 @@ const MobileInner = ({ it }: { it: MenuItem }) => (
 type Variant = "desktop" | "mobile" | "desktop-left" | "desktop-right";
 
 const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
-  const { data: items = [] } = useQuery({
+  const { data: items = DEFAULT_MENU_ITEMS } = useQuery({
     queryKey: ["homepage-left-menu"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("homepage_left_menu_items")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data || []) as MenuItem[];
+      try {
+        const { data, error } = await supabase
+          .from("homepage_left_menu_items")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (error || !data || data.length === 0) return getStoredMenuItems();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch {}
+        return data as MenuItem[];
+      } catch {
+        return getStoredMenuItems();
+      }
     },
+    initialData: getStoredMenuItems,
+    staleTime: 1000 * 60 * 15,
   });
 
   const isMobile = variant === "mobile";
   const baseClass = isMobile ? mobileItemBase : desktopItemBase;
   const Inner = isMobile ? MobileInner : DesktopInner;
 
-  // Split items in half for left/right desktop variants
   let displayItems = items;
   if (variant === "desktop-left") {
     const half = Math.ceil(items.length / 2);
@@ -100,11 +130,8 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
     : "hidden md:flex flex-col gap-2.5 w-56 shrink-0";
 
   const Wrapper: any = isMobile ? "div" : "aside";
-
-  // For mobile, use ALL items (not split)
   const renderItems = isMobile ? items : displayItems;
 
-  // If desktop-right has nothing (only 1 item total), don't render anything
   if (variant === "desktop-right" && renderItems.length === 0) {
     return <Wrapper className={wrapperClass} />;
   }
@@ -112,7 +139,6 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
   return (
     <Wrapper className={wrapperClass}>
       {renderItems.map((it, idx) => {
-        // Compute global index for stable gradient palette
         const globalIdx =
           variant === "desktop-right"
             ? Math.ceil(items.length / 2) + idx
