@@ -101,7 +101,7 @@ const AdminSupportTickets = () => {
             .select("site_name")
             .limit(1)
             .single();
-          const siteName = siteSettings?.site_name || "QweekBD";
+          const siteName = siteSettings?.site_name || "Sheikh Pharma";
           const truncatedReply = replyText.trim().length > 100 ? replyText.trim().slice(0, 100) + "..." : replyText.trim();
           const msg = `${siteName}: আপনার সাপোর্ট টিকেটে "${selectedTicket.subject}" রিপ্লাই:\n${truncatedReply}`;
           await supabase.functions.invoke("send-sms", {

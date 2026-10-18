@@ -48,7 +48,7 @@ const BloodBank = () => {
 
       if (smsSettings?.is_enabled && smsSettings.admin_phone) {
         const { data: siteSettings } = await supabase.from("site_settings").select("site_name").limit(1).single();
-        const siteName = siteSettings?.site_name || "QweekBD";
+        const siteName = siteSettings?.site_name || "Sheikh Pharma";
         const locationParts = [form.upazilla, form.zilla, form.division, form.location].filter(Boolean).join(", ");
         const msg = type === "need"
           ? `${siteName}: 🩸 জরুরি রক্তের প্রয়োজন!\nনাম: ${form.name}\nফোন: ${form.phone}\nগ্রুপ: ${form.blood_group}\nঠিকানা: ${locationParts}\nবিস্তারিত: ${form.details || "N/A"}`

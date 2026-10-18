@@ -103,7 +103,7 @@ const SupportTickets = () => {
             .select("site_name")
             .limit(1)
             .single();
-          const siteName = siteSettings?.site_name || "QweekBD";
+          const siteName = siteSettings?.site_name || "Sheikh Pharma";
           const truncatedMsg = newMessage.trim().length > 100 ? newMessage.trim().slice(0, 100) + "..." : newMessage.trim();
           const msg = `${siteName}: নতুন সাপোর্ট টিকেট!\nবিষয়: ${ticket.subject}\nমেসেজ: ${truncatedMsg}`;
           await supabase.functions.invoke("send-sms", {

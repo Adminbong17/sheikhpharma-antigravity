@@ -285,7 +285,7 @@ const AdminOrders = () => {
         const { data: smsSettings } = await supabase.from("sms_settings" as any).select("*").limit(1).single();
         if ((smsSettings as any)?.is_enabled && (smsSettings as any)?.admin_phone) {
           const { data: siteSettings } = await supabase.from("site_settings").select("site_name").limit(1).single();
-          const siteName = siteSettings?.site_name || "QweekBD";
+          const siteName = siteSettings?.site_name || "Sheikh Pharma";
           const message = `${siteName}: অর্ডার #${String(order.order_number).padStart(11, "0")} পেমেন্ট সম্পন্ন হয়েছে। মোট: ৳${order.total}। গ্রাহক: ${order.customer_name || "N/A"}`;
           await supabase.functions.invoke("send-sms", {
             body: { phone: (smsSettings as any).admin_phone, message, event_type: "payment_confirmed", order_id: id },

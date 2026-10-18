@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, FileDown, ExternalLink } from "lucide-react";
 import BackButton from "@/components/BackButton";
 
-const BASE = "https://rbkhznaontwdhczxznlp.supabase.co/functions/v1";
+const BASE = "https://vkfloynvxqkxbqpdlzbd.supabase.co/functions/v1";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="space-y-2">
@@ -63,7 +63,7 @@ const EndpointCard = ({ method, path, desc, params, body, response, curl }: any)
 );
 
 const downloadPdf = () => {
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Qweek BD API Documentation</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sheikh Pharma API Documentation</title>
 <style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:40px;font-size:13px;color:#333}
 h1{color:#1a1a1a;border-bottom:2px solid #333;padding-bottom:8px}h2{color:#444;margin-top:30px}
 h3{margin-top:20px}pre{background:#f5f5f5;padding:12px;border-radius:6px;font-size:11px;overflow-x:auto;border:1px solid #ddd}
@@ -72,7 +72,7 @@ code{font-family:'Fira Code',monospace;font-size:11px}.badge{display:inline-bloc
 th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{background:#f5f5f5}
 .section{page-break-inside:avoid;margin-bottom:30px}
 @media print{body{padding:20px}}</style></head><body>
-<h1>🛒 Qweek BD — API Documentation</h1>
+<h1>🛒 Sheikh Pharma — API Documentation</h1>
 <p>Base URL: <code>${BASE}/public-api/</code></p>
 <p>Cart API: <code>${BASE}/create-external-cart</code></p>
 <p>সকল রিকুয়েস্টে <code>x-api-key</code> হেডার আবশ্যক।</p>
@@ -103,7 +103,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{ba
   -d '{"items":[{"product_id":"UUID","quantity":2}]}' \\
   ${BASE}/create-external-cart</pre>
 <p>Response এ checkout_url পাবেন। ইউজারকে সেই URL এ redirect করুন।</p>
-<p>Checkout QweekBD এর ফ্লো ব্যবহার করবে কিন্তু আপনার সাইট থেকে redirect হবে।</p></div>
+<p>Checkout Sheikh Pharma এর ফ্লো ব্যবহার করবে কিন্তু আপনার সাইট থেকে redirect হবে।</p></div>
 
 <h2>📋 Order Tracking</h2>
 <div class="section"><h3><span class="badge get">GET</span> /order-status?order_id=UUID or ?order_number=12345</h3>
@@ -112,7 +112,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{ba
 
 <h2>💬 Messaging</h2>
 <div class="section"><h3><span class="badge post">POST</span> /send-message</h3>
-<p>QweekBD এডমিনকে মেসেজ পাঠান।</p>
+<p>Sheikh Pharma এডমিনকে মেসেজ পাঠান।</p>
 <pre>curl -X POST -H "x-api-key: YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"message":"Order #123 নিয়ে জানতে চাই","order_id":"UUID","sender_name":"Partner X"}' \\
@@ -123,14 +123,14 @@ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{ba
 
 <h2>🔄 সম্পূর্ণ ফ্লো</h2>
 <table><tr><th>ধাপ</th><th>বিবরণ</th></tr>
-<tr><td>1</td><td>API Key সংগ্রহ করুন QweekBD এডমিন থেকে</td></tr>
+<tr><td>1</td><td>API Key সংগ্রহ করুন Sheikh Pharma এডমিন থেকে</td></tr>
 <tr><td>2</td><td><code>/products</code> দিয়ে প্রোডাক্ট sync করুন (রিয়েল টাইম)</td></tr>
 <tr><td>3</td><td><code>/categories</code>, <code>/subcategories</code> দিয়ে ক্যাটেগরি sync করুন</td></tr>
 <tr><td>4</td><td>কাস্টমার কার্টে প্রোডাক্ট যোগ করলে <code>/create-external-cart</code> কল করুন</td></tr>
 <tr><td>5</td><td>checkout_url এ ইউজারকে redirect করুন</td></tr>
-<tr><td>6</td><td>অর্ডার QweekBD এডমিন প্যানেলে জমা হবে</td></tr>
+<tr><td>6</td><td>অর্ডার Sheikh Pharma এডমিন প্যানেলে জমা হবে</td></tr>
 <tr><td>7</td><td><code>/order-status</code> দিয়ে আপনার ড্যাশবোর্ডে অর্ডার ট্র্যাক করুন</td></tr>
-<tr><td>8</td><td><code>/send-message</code> দিয়ে QweekBD এডমিনকে মেসেজ করুন</td></tr>
+<tr><td>8</td><td><code>/send-message</code> দিয়ে Sheikh Pharma এডমিনকে মেসেজ করুন</td></tr>
 </table>
 
 <h2>⚠️ Error Codes</h2>
@@ -228,8 +228,8 @@ const AdminApiDocs = () => {
                 <li>Checkout বাটনে ক্লিক করলে <code className="bg-muted px-1 rounded">/create-external-cart</code> কল করুন</li>
                 <li>API response এ <code>checkout_url</code> পাবেন</li>
                 <li>কাস্টমারকে সেই URL এ redirect করুন</li>
-                <li>QweekBD এর checkout ফ্লো চলবে (কিন্তু আপনার সাইট থেকে এসেছে সেটা ট্র্যাক হবে)</li>
-                <li>অর্ডার সম্পন্ন হলে QweekBD এডমিন প্যানেলে জমা হবে</li>
+                <li>Sheikh Pharma এর checkout ফ্লো চলবে (কিন্তু আপনার সাইট থেকে এসেছে সেটা ট্র্যাক হবে)</li>
+                <li>অর্ডার সম্পন্ন হলে Sheikh Pharma এডমিন প্যানেলে জমা হবে</li>
               </ol>
             </CardContent>
           </Card>
@@ -244,7 +244,7 @@ const AdminApiDocs = () => {
             response={`{
   "success": true,
   "data": {
-    "checkout_url": "https://qweekbd.lovable.app/cart/TOKEN",
+    "checkout_url": "https://sheikhpharma.com/cart/TOKEN",
     "cart_token": "TOKEN",
     "items": [...],
     "expires_in": "24 hours"
@@ -301,7 +301,7 @@ const AdminApiDocs = () => {
         </TabsContent>
 
         <TabsContent value="messaging" className="space-y-4">
-          <EndpointCard method="POST" path="/send-message" desc="QweekBD এডমিনকে মেসেজ পাঠান। মেসেজ এডমিন প্যানেলের নোটিফিকেশনে আসবে।"
+          <EndpointCard method="POST" path="/send-message" desc="Sheikh Pharma এডমিনকে মেসেজ পাঠান। মেসেজ এডমিন প্যানেলের নোটিফিকেশনে আসবে।"
             body={`{
   "message": "Order #12345 নিয়ে জানতে চাই",
   "order_id": "uuid (optional)",
@@ -321,13 +321,13 @@ const AdminApiDocs = () => {
             <CardContent>
               <div className="space-y-4 text-sm">
                 {[
-                  { step: "১", title: "API Key সংগ্রহ", desc: "QweekBD এডমিন থেকে API Key নিন।" },
-                  { step: "২", title: "ডেটা Sync", desc: "/products, /categories, /subcategories দিয়ে রিয়েল টাইমে ডেটা fetch করুন। আপনার সাইটে হুবহু QweekBD এর মতো প্রোডাক্ট দেখাবে।" },
-                  { step: "৩", title: "কার্ট তৈরি", desc: "কাস্টমার Checkout বাটনে ক্লিক করলে /create-external-cart কল করুন। আপনার কার্ট ও QweekBD কার্ট sync হবে।" },
-                  { step: "৪", title: "Checkout Redirect", desc: "checkout_url এ কাস্টমারকে redirect করুন। QweekBD এর checkout ফ্লো চলবে কিন্তু থিম আপনার সাইটের থাকবে না — QweekBD এর checkout page ব্যবহার হবে।" },
-                  { step: "৫", title: "অর্ডার ম্যানেজমেন্ট", desc: "অর্ডার QweekBD এডমিন প্যানেলে জমা হবে ও প্রসেস হবে।" },
+                  { step: "১", title: "API Key সংগ্রহ", desc: "Sheikh Pharma এডমিন থেকে API Key নিন।" },
+                  { step: "২", title: "ডেটা Sync", desc: "/products, /categories, /subcategories দিয়ে রিয়েল টাইমে ডেটা fetch করুন। আপনার সাইটে হুবহু Sheikh Pharma এর মতো প্রোডাক্ট দেখাবে।" },
+                  { step: "৩", title: "কার্ট তৈরি", desc: "কাস্টমার Checkout বাটনে ক্লিক করলে /create-external-cart কল করুন। আপনার কার্ট ও Sheikh Pharma কার্ট sync হবে।" },
+                  { step: "৪", title: "Checkout Redirect", desc: "checkout_url এ কাস্টমারকে redirect করুন। Sheikh Pharma এর checkout ফ্লো চলবে কিন্তু থিম আপনার সাইটের থাকবে না — Sheikh Pharma এর checkout page ব্যবহার হবে।" },
+                  { step: "৫", title: "অর্ডার ম্যানেজমেন্ট", desc: "অর্ডার Sheikh Pharma এডমিন প্যানেলে জমা হবে ও প্রসেস হবে।" },
                   { step: "৬", title: "Order Tracking", desc: "/order-status দিয়ে আপনার ড্যাশবোর্ডে অর্ডার আইডি ও স্ট্যাটাস আপডেট শো করুন।" },
-                  { step: "৭", title: "Messaging", desc: "/send-message দিয়ে QweekBD এডমিনকে মেসেজ করুন, /get-messages দিয়ে রিপ্লাই দেখুন।" },
+                  { step: "৭", title: "Messaging", desc: "/send-message দিয়ে Sheikh Pharma এডমিনকে মেসেজ করুন, /get-messages দিয়ে রিপ্লাই দেখুন।" },
                 ].map((item) => (
                   <div key={item.step} className="flex gap-3 items-start">
                     <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">

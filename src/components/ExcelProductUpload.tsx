@@ -477,7 +477,7 @@ const ExcelProductUpload = ({ onComplete }: Props) => {
 
         if (smsSettings?.is_enabled && smsSettings.admin_phone) {
           const { data: siteSettings } = await supabase.from("site_settings").select("site_name").limit(1).single();
-          const siteName = siteSettings?.site_name || "QweekBD";
+          const siteName = siteSettings?.site_name || "Sheikh Pharma";
           const smsMsg = `${siteName}: Excel ইম্পোর্টে ${createdBrands.length}টি নতুন ব্র্যান্ড তৈরি হয়েছে - ${createdBrands.slice(0, 5).join(", ")}${createdBrands.length > 5 ? ` ও আরো ${createdBrands.length - 5}টি` : ""}`;
           await supabase.functions.invoke("send-sms", {
             body: { phone: smsSettings.admin_phone, message: smsMsg, event_type: "brand_auto_created" },
