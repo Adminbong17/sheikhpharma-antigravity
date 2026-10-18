@@ -15,11 +15,26 @@ type MenuItem = {
 };
 
 export const DEFAULT_MENU_ITEMS: MenuItem[] = [
-  { id: "9404c67e-4062-416e-b359-9402ca060694", name: "প্রেসক্রিপশন আপলোড", icon: "📋", image_url: null, sort_order: 1, link_url: "/prescription", use_link: true, bg_color: null },
-  { id: "423f8f43-54f3-4c6d-b40a-9e292d853506", name: "ল্যাব টেস্ট বুকিং", icon: "🧪", image_url: null, sort_order: 2, link_url: "/lab-test", use_link: true, bg_color: null },
-  { id: "fb495c81-7018-4cd4-8ace-b191c6f670c3", name: "বিশেষজ্ঞ চিকিৎসক", icon: "👨‍⚕️", image_url: null, sort_order: 3, link_url: "/specialist-doctors", use_link: true, bg_color: null },
-  { id: "5abf139e-4833-45f9-a4b5-0374777a0431", name: "ব্লাড ব্যাংক", icon: "🩸", image_url: null, sort_order: 4, link_url: "/blood-bank", use_link: true, bg_color: null },
-  { id: "ddfa0bcd-5d84-439c-8337-fe19e9287c0d", name: "জরুরি সেবা (২৪/৭)", icon: "🚨", image_url: null, sort_order: 5, link_url: "/emergency", use_link: true, bg_color: null },
+  {
+    id: "c71c7d0f-765e-4586-8d06-16c191c4cdea",
+    name: "Pregnancy care",
+    icon: "🤰",
+    image_url: null,
+    sort_order: 1,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
+    id: "080745ee-f94c-4882-9217-e90909859061",
+    name: "Qweek BD",
+    icon: "🛒",
+    image_url: null,
+    sort_order: 2,
+    link_url: "https://qweekbd.com/",
+    use_link: true,
+    bg_color: null,
+  },
 ];
 
 const STORAGE_KEY = "sheikhpharma_left_menu";
@@ -30,12 +45,7 @@ const getStoredMenuItems = (): MenuItem[] => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (
-        Array.isArray(parsed) &&
-        parsed.length > 0 &&
-        parsed[0]?.name !== "Pregnancy care" &&
-        parsed[0]?.name !== "Qweek BD"
-      ) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     }
