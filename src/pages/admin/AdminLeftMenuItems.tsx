@@ -10,8 +10,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, Upload, Loader2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Loader2, X, Sparkles } from "lucide-react";
 import BackButton from "@/components/BackButton";
+import { DEFAULT_MENU_ITEMS } from "@/components/HomepageLeftMenu";
 
 type Item = {
   id: string;
@@ -113,6 +114,34 @@ const AdminLeftMenuItems = () => {
     },
   });
 
+  const syncDefaults = useMutation({
+    mutationFn: async () => {
+      for (const def of DEFAULT_MENU_ITEMS) {
+        const { error } = await supabase.from("homepage_left_menu_items").upsert(
+          {
+            id: def.id,
+            name: def.name,
+            icon: def.icon,
+            image_url: def.image_url,
+            sort_order: def.sort_order,
+            is_active: true,
+            link_url: def.link_url,
+            use_link: def.use_link,
+            bg_color: def.bg_color,
+          },
+          { onConflict: "id" }
+        );
+        if (error) console.error("Sync error:", error);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-left-menu-items"] });
+      qc.invalidateQueries({ queryKey: ["homepage-left-menu"] });
+      toast.success("৭টি ডিফল্ট মেনু সফলভাবে যুক্ত হয়েছে!");
+    },
+    onError: (e: any) => toast.error(e.message || "সিঙ্ক করতে সমস্যা হয়েছে"),
+  });
+
   const openCreate = () => { setEditing(null); setForm(empty); setOpen(true); };
   const openEdit = (it: Item) => {
     setEditing(it);
@@ -139,7 +168,21 @@ const AdminLeftMenuItems = () => {
             হোমপেজের বাম পাশে দেখানো menu items। প্রতিটিতে products assign করা যাবে।
           </p>
         </div>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> New Item</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => syncDefaults.mutate()}
+            disabled={syncDefaults.isPending}
+          >
+            {syncDefaults.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-1 text-primary" />
+            )}
+            ডিফল্ট ৭টি মেনু লোড করুন
+          </Button>
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> New Item</Button>
+        </div>
       </div>
 
       {isLoading ? (

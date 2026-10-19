@@ -26,11 +26,61 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
     bg_color: null,
   },
   {
+    id: "11111111-2222-3333-4444-555555555501",
+    name: "ডায়াবেটিস কেয়ার (Diabetes Care)",
+    icon: "🩸",
+    image_url: null,
+    sort_order: 2,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
+    id: "11111111-2222-3333-4444-555555555502",
+    name: "বেবি ও শিশু যত্ন (Baby Care)",
+    icon: "👶",
+    image_url: null,
+    sort_order: 3,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
+    id: "11111111-2222-3333-4444-555555555503",
+    name: "ভিটামিন ও সাপ্লিমেন্ট (Vitamins)",
+    icon: "💊",
+    image_url: null,
+    sort_order: 4,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
+    id: "11111111-2222-3333-4444-555555555504",
+    name: "ওমেনস হাইজিন (Women's Hygiene)",
+    icon: "🌸",
+    image_url: null,
+    sort_order: 5,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
+    id: "11111111-2222-3333-4444-555555555505",
+    name: "মেডিকেল ডিভাইস (Medical Devices)",
+    icon: "🩺",
+    image_url: null,
+    sort_order: 6,
+    link_url: null,
+    use_link: false,
+    bg_color: null,
+  },
+  {
     id: "080745ee-f94c-4882-9217-e90909859061",
     name: "Qweek BD",
     icon: "🛒",
     image_url: null,
-    sort_order: 2,
+    sort_order: 7,
     link_url: "https://qweekbd.com/",
     use_link: true,
     bg_color: null,
@@ -116,11 +166,38 @@ const HomepageLeftMenu = ({ variant = "desktop" }: { variant?: Variant }) => {
           .select("*")
           .eq("is_active", true)
           .order("sort_order", { ascending: true });
-        if (error || !data || data.length === 0) return getStoredMenuItems();
+
+        let list: MenuItem[] = DEFAULT_MENU_ITEMS;
+        if (!error && data && data.length > 0) {
+          const dbNames = new Set(data.map((d: any) => d.name?.trim().toLowerCase()));
+          const missingDefaults = DEFAULT_MENU_ITEMS.filter(
+            (def) =>
+              !dbNames.has(def.name.trim().toLowerCase()) &&
+              !data.some((d: any) => d.id === def.id)
+          );
+          list = [...data, ...missingDefaults].sort(
+            (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+          );
+        } else {
+          list = getStoredMenuItems();
+        }
+
+        // Ensure Qweek BD opens externally and others open internal page
+        list = list.map((it) => {
+          if (it.name?.toLowerCase().includes("qweek")) {
+            return {
+              ...it,
+              use_link: true,
+              link_url: it.link_url || "https://qweekbd.com/",
+            };
+          }
+          return it;
+        });
+
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
         } catch {}
-        return data as MenuItem[];
+        return list;
       } catch {
         return getStoredMenuItems();
       }
