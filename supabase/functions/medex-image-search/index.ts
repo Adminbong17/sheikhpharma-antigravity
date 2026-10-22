@@ -294,20 +294,19 @@ async function downloadAndUpload(imageUrl: string, brandSlug: string): Promise<{
   return { vaultUrl, fallbackUrl: imageUrl };
 }
 
-// ── BROADER IMAGE EXTRACTION from drug page ──
-// Looks in packaging first, then falls back to any product image on the page
+// ── STRICT IMAGE EXTRACTION from drug page ──
+// ONLY accepts packaging images — rejects logos, icons, and generic site images
 function extractDrugImage(drugHtml: string): string | null {
-  // Priority 1: packaging folder
+  // Priority 1: packaging folder (the actual product photo)
   const packMatch = /https:\/\/medex\.com\.bd\/storage\/images\/packaging\/[^"'\s>]+/.exec(drugHtml);
   if (packMatch) return packMatch[0];
 
-  // Priority 2: any medex product/brand image (data-src or src)
-  const dataSrcMatch = /data-src=["'](https:\/\/medex\.com\.bd\/storage\/images\/[^"']+)["']/i.exec(drugHtml);
+  // Priority 2: data-src packaging images (lazy-loaded)
+  const dataSrcMatch = /data-src=["'](https:\/\/medex\.com\.bd\/storage\/images\/packaging\/[^"']+)["']/i.exec(drugHtml);
   if (dataSrcMatch) return dataSrcMatch[1];
 
-  // Priority 3: og:image meta tag
-  const ogMatch = /property=["']og:image["']\s+content=["']([^"']+)["']/i.exec(drugHtml);
-  if (ogMatch && ogMatch[1].includes('medex.com.bd')) return ogMatch[1];
+  // NO further fallbacks — we do NOT want logos, company_logos, og:image defaults, etc.
+  return null;
 
   return null;
 }
