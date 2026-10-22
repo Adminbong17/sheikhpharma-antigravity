@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Loader2, Search, CheckCircle2, XCircle, Image as ImageIcon,
   Play, Square, Download, RefreshCw, Package, BarChart3, Clock,
-  Filter, Sparkles, ExternalLink
+  Filter, Sparkles, ExternalLink, RotateCcw
 } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { uploadToVault } from "@/lib/vaultStorage";
@@ -49,6 +49,27 @@ const MedexImageSync = () => {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [customSearchNames, setCustomSearchNames] = useState<Record<string, string>>({});
   const [isBulkSyncingFiltered, setIsBulkSyncingFiltered] = useState(false);
+  const [isResettingCooldown, setIsResettingCooldown] = useState(false);
+
+  const resetAllCooldowns = async () => {
+    setIsResettingCooldown(true);
+    try {
+      // Reset image_last_searched_at for all products without images
+      const { error } = await supabase
+        .from("products")
+        .update({ image_last_searched_at: null })
+        .is("image_url", null)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      refetchStats();
+      toast.success("সকল কুলডাউন সফলভাবে রিসেট হয়েছে! এখন সবগুলো প্রোডাক্ট আবার সিঙ্কের জন্য প্রস্তুত।");
+    } catch (err: any) {
+      toast.error("কুলডাউন রিসেট ব্যর্থ: " + err.message);
+    } finally {
+      setIsResettingCooldown(false);
+    }
+  };
 
   const handleSearchProducts = async () => {
     if (!searchQuery.trim()) {
@@ -649,6 +670,21 @@ const MedexImageSync = () => {
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     রিসেট
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetAllCooldowns}
+                    disabled={isRunning || isResettingCooldown}
+                    className="border-amber-400 text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                  >
+                    {isResettingCooldown ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                    )}
+                    কুলডাউন রিসেট করুন
                   </Button>
                 </div>
 

@@ -26,12 +26,63 @@ async function fetchHtml(url: string): Promise<string | null> {
   }
 }
 
+// ── KNOWN COMPANY PREFIXES to strip from product names ──
+const COMPANY_PREFIXES = [
+  'square', 'beximco', 'incepta', 'aci', 'renata', 'eskayef', 'opsonin',
+  'acme', 'aristopharma', 'drug international', 'globe', 'ibnsina',
+  'jayson', 'nuvista', 'orion', 'popular', 'radiant', 'sanofi',
+  'healthcare', 'pharma', 'pharmaceuticals', 'ltd', 'limited',
+  'genera', 'unimed', 'beacon', 'navana',
+];
+
+// ── PACK SIZE PATTERNS to strip (e.g. "10x10", "30's", "strip of 10") ──
+const PACK_PATTERNS = [
+  /\b\d+\s*x\s*\d+\b/gi,              // 10x10, 5x10
+  /\b\d+'s?\b/gi,                       // 30's, 30s
+  /\bstrip\s*(of\s*)?\d*\b/gi,         // strip, strip of 10
+  /\bpack\s*(of\s*)?\d*\b/gi,          // pack, pack of 30
+  /\bbox\s*(of\s*)?\d*\b/gi,           // box, box of 10
+  /\b(per|each)\s*(strip|pack|box|piece)\b/gi,
+  /\bpcs?\b/gi,                         // pc, pcs
+];
+
 // Extract the clean brand name and strength numbers from a product title
 function extractBrandInfo(productName: string) {
   let text = productName.trim();
 
-  // 1. Extract strength numbers FIRST (before any stripping)
-  const numbers = [...text.matchAll(/\d+(\.\d+)?/g)].map(m => m[0]);
+  // 0. STRIP company prefixes from the beginning
+  let lowerCheck = text.toLowerCase();
+  for (const prefix of COMPANY_PREFIXES) {
+    if (lowerCheck.startsWith(prefix + ' ') || lowerCheck.startsWith(prefix + '-')) {
+      text = text.substring(prefix.length).replace(/^[\s\-]+/, '');
+      lowerCheck = text.toLowerCase();
+    }
+  }
+
+  // 0b. STRIP pack-size patterns BEFORE number extraction so "10x10" doesn't pollute strength
+  for (const pat of PACK_PATTERNS) {
+    text = text.replace(pat, ' ');
+  }
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // 1. Extract REAL strength numbers (only those followed by a unit like mg, mcg, ml, iu, %)
+  const strengthNumbers: string[] = [];
+  const strengthRx = /(\d+(?:\.\d+)?)\s*(mg|mcg|gm|g|ml|iu|%|unit)/gi;
+  let sm;
+  while ((sm = strengthRx.exec(text)) !== null) {
+    strengthNumbers.push(sm[1]);
+  }
+
+  // Also extract standalone numbers that are NOT pack sizes (for "Sergel 20", "Napa 500")
+  const bareNumbers: string[] = [];
+  const bareRx = /\b(\d+(?:\.\d+)?)\b/g;
+  let bm;
+  while ((bm = bareRx.exec(text)) !== null) {
+    bareNumbers.push(bm[1]);
+  }
+
+  // Use strength numbers if we found unit-qualified ones; otherwise use bare numbers
+  const numbers = strengthNumbers.length > 0 ? strengthNumbers : bareNumbers;
 
   // 2. Extract dosage forms and route of administration for strict matching
   const requiredForms: string[] = [];
@@ -90,52 +141,59 @@ function extractBrandInfo(productName: string) {
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
     .trim();
 
   return { brandName: text, brandSlug, numbers, requiredForms };
 }
 
-// Strict score candidate against the brand — REJECTS wrong power and wrong dosage form / route
+// ── SMART SCORING ──
+// When the product name has NO numbers (e.g. "Napa Rapid Tablet"), we accept
+// any candidate that starts with the brand slug. We only reject on power
+// mismatch when the product itself specifies a power.
 function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: string[], requiredForms: string[] = []): number {
   const norm = candidateSlug.toLowerCase();
+
   // Candidate MUST start with the brand slug (e.g. a-cal-d-500-mg-tablet starts with a-cal-d-)
   const isMatch = norm === brandSlug || norm.startsWith(brandSlug + '-');
   if (!isMatch) {
     return -1; // REJECT — wrong brand
   }
 
-  // 1. STRICT POWER MATCH: extract numbers from the candidate slug
-  const candidateNumbers = [...norm.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => m[0]);
-  for (const cn of candidateNumbers) {
-    if (!numbers.includes(cn)) {
-      return -1; // REJECT — different strength/power
+  // 1. POWER MATCH — only enforce if the product name itself had numbers
+  if (numbers.length > 0) {
+    const candidateNumbers = [...norm.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => m[0]);
+    for (const cn of candidateNumbers) {
+      if (!numbers.includes(cn)) {
+        return -1; // REJECT — different strength/power
+      }
     }
   }
+  // If numbers.length === 0, we ACCEPT any power variant (first match wins)
 
   // 2. STRICT ROUTE MATCH (IM vs IV)
-  // IM injection must never get IV injection picture and vice-versa
   if (requiredForms.includes('im') && (norm.includes('-iv-') || norm.includes('iv-injection') || norm.includes('iv-infusion'))) {
-    return -1; // REJECT — requested IM but candidate is IV
+    return -1;
   }
   if (requiredForms.includes('iv') && (norm.includes('-im-') || norm.includes('im-injection'))) {
-    return -1; // REJECT — requested IV but candidate is IM
+    return -1;
   }
 
   // 3. STRICT FORM MATCH (Tablet vs Capsule vs Syrup vs Suppository)
   if (requiredForms.includes('tablet') && (norm.includes('capsule') || norm.includes('syrup') || norm.includes('suppository'))) {
-    return -1; // REJECT — requested tablet but candidate is capsule/syrup/suppository
+    return -1;
   }
   if (requiredForms.includes('capsule') && (norm.includes('tablet') || norm.includes('syrup') || norm.includes('suppository'))) {
-    return -1; // REJECT — requested capsule but candidate is tablet/syrup/suppository
+    return -1;
   }
   if (requiredForms.includes('syrup') && (norm.includes('suspension') || norm.includes('tablet'))) {
-    return -1; // REJECT — requested syrup but candidate is suspension/tablet
+    return -1;
   }
   if (requiredForms.includes('suspension') && (norm.includes('syrup') || norm.includes('tablet'))) {
-    return -1; // REJECT — requested suspension but candidate is syrup/tablet
+    return -1;
   }
   if (requiredForms.includes('suppository') && (norm.includes('tablet') || norm.includes('capsule') || norm.includes('syrup'))) {
-    return -1; // REJECT — requested suppository but candidate is tablet/capsule
+    return -1;
   }
 
   let score = 100;
@@ -150,6 +208,10 @@ function scoreCandidate(candidateSlug: string, brandSlug: string, numbers: strin
     if (norm.includes(f)) {
       score += 50;
     }
+  }
+  // Bonus for shorter/more-specific slugs (prefer exact match)
+  if (norm === brandSlug) {
+    score += 20;
   }
   return score;
 }
@@ -202,7 +264,8 @@ async function uploadToVaultDirect(imgBytes: Uint8Array, fileName: string, mime:
 }
 
 // Download an image from a URL and upload it to FileVault
-async function downloadAndUpload(imageUrl: string, brandSlug: string): Promise<{ vaultUrl: string | null }> {
+// Falls back to the original Medex URL if FileVault upload fails
+async function downloadAndUpload(imageUrl: string, brandSlug: string): Promise<{ vaultUrl: string | null; fallbackUrl: string }> {
   let vaultUrl: string | null = null;
   try {
     const imgRes = await fetch(imageUrl, {
@@ -220,9 +283,27 @@ async function downloadAndUpload(imageUrl: string, brandSlug: string): Promise<{
       console.log(`Uploaded to FileVault: ${vaultUrl}`);
     }
   } catch (vaultErr) {
-    console.error("Direct Vault upload failed, returning original URL as fallback:", vaultErr);
+    console.error("Vault upload failed, returning Medex URL as fallback:", vaultErr);
   }
-  return { vaultUrl };
+  return { vaultUrl, fallbackUrl: imageUrl };
+}
+
+// ── BROADER IMAGE EXTRACTION from drug page ──
+// Looks in packaging first, then falls back to any product image on the page
+function extractDrugImage(drugHtml: string): string | null {
+  // Priority 1: packaging folder
+  const packMatch = /https:\/\/medex\.com\.bd\/storage\/images\/packaging\/[^"'\s>]+/.exec(drugHtml);
+  if (packMatch) return packMatch[0];
+
+  // Priority 2: any medex product/brand image (data-src or src)
+  const dataSrcMatch = /data-src=["'](https:\/\/medex\.com\.bd\/storage\/images\/[^"']+)["']/i.exec(drugHtml);
+  if (dataSrcMatch) return dataSrcMatch[1];
+
+  // Priority 3: og:image meta tag
+  const ogMatch = /property=["']og:image["']\s+content=["']([^"']+)["']/i.exec(drugHtml);
+  if (ogMatch && ogMatch[1].includes('medex.com.bd')) return ogMatch[1];
+
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -285,6 +366,9 @@ Deno.serve(async (req) => {
     const { brandName, brandSlug, numbers, requiredForms } = extractBrandInfo(productName);
     console.log(`Product: "${productName}" => Brand: "${brandName}" (slug: "${brandSlug}"), Numbers:`, numbers, "Forms:", requiredForms);
 
+    // If brand slug is empty or just dashes (e.g. Bengali-only name), use the raw product name for search
+    const isSlugEmpty = !brandSlug || brandSlug === '-' || brandSlug.length < 2;
+
     // Helper: extract candidates from HTML
     const linkRegex = /\/brands\/(\d+)\/([a-z0-9-]+)/g;
     const seen = new Set<string>();
@@ -297,9 +381,14 @@ Deno.serve(async (req) => {
         const key = `${m[1]}/${m[2]}`;
         if (!seen.has(key)) {
           seen.add(key);
-          const score = scoreCandidate(m[2], brandSlug, numbers, requiredForms);
-          if (score > 0) {
-            candidates.push({ id: m[1], slug: m[2], score });
+          if (isSlugEmpty) {
+            // Can't do slug matching — accept all candidates from the search page
+            candidates.push({ id: m[1], slug: m[2], score: 50 });
+          } else {
+            const score = scoreCandidate(m[2], brandSlug, numbers, requiredForms);
+            if (score > 0) {
+              candidates.push({ id: m[1], slug: m[2], score });
+            }
           }
         }
       }
@@ -356,18 +445,19 @@ Deno.serve(async (req) => {
       const drugHtml = await fetchHtml(drugUrl);
       if (!drugHtml) continue;
 
-      const imgMatch = /https:\/\/medex\.com\.bd\/storage\/images\/packaging\/[^"'\s>]+/.exec(drugHtml);
-      if (imgMatch) {
-        const medexImageUrl = imgMatch[0];
+      const medexImageUrl = extractDrugImage(drugHtml);
+      if (medexImageUrl) {
         const drugName = c.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        console.log(`Found pack image on candidate ${c.slug}: ${medexImageUrl}`);
+        console.log(`Found image on candidate ${c.slug}: ${medexImageUrl}`);
 
-        // Download and upload to FileVault
-        const result = await downloadAndUpload(medexImageUrl, brandSlug);
+        // Download and upload to FileVault (with Medex URL fallback)
+        const result = await downloadAndUpload(medexImageUrl, brandSlug || c.slug);
+        const finalUrl = result.vaultUrl || result.fallbackUrl;
+
         return new Response(JSON.stringify({
           success: true,
           vault_url: result.vaultUrl,
-          image_url: result.vaultUrl || medexImageUrl,
+          image_url: finalUrl,
           medex_url: drugUrl,
           drug_name: drugName,
         }), {
