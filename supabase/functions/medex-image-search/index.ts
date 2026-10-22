@@ -113,6 +113,8 @@ function extractBrandInfo(productName: string) {
   // 5. Remove dosage form descriptors using SPACE-BOUNDARY (not \b) to protect
   //    hyphenated brand names like A-Gel, A-Cal, A-Pect, A-Ket etc.
   const forms = [
+    // Multi-word compound forms FIRST (longest match first)
+    'powder for suspensions?', 'powder for injections?', 'powder for solutions?',
     'chewable tablets?', 'dispersible tablets?', 'orally disintegrating tablets?',
     'effervescent tablets?', 'extended release tablets?', 'sustained release tablets?',
     'film coated tablets?', 'ec tablets?', 'mups tablets?',
@@ -134,6 +136,10 @@ function extractBrandInfo(productName: string) {
     text = text.replace(rx, ' ');
   }
 
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // 6. Remove residual stop-words that remain after form stripping (e.g. "for" from "powder for suspension")
+  text = text.replace(/(\s+|^)(for|of|the|with|and|in|per|each|a|an)(\s+|$)/gi, ' ');
   text = text.replace(/\s+/g, ' ').trim();
 
   const brandSlug = text
