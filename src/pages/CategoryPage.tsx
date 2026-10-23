@@ -29,7 +29,15 @@ const CategoryPage = () => {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const category = categories.find((c) => c.slug === slug);
-  const subcategories = allSubs.filter((s) => s.category_id === category?.id);
+  const isHomeo = slug === "homeopathy";
+  const subcategories = allSubs.filter(
+    (s) =>
+      s.category_id === category?.id ||
+      (isHomeo &&
+        (s.category_id === "88a68058-3da9-45b7-9f94-bd1399116d0b" ||
+          s.category_id === "cat-12" ||
+          s.id.startsWith("sub-hom-")))
+  );
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products-by-category", slug, activeSub],
@@ -40,7 +48,7 @@ const CategoryPage = () => {
           (value): value is string => Boolean(value),
         );
         const orFilter = subcategoryValues
-          .flatMap((v) => [`category.eq.${v}`, `subcategory.eq.${v}`])
+          .flatMap((v) => [`category.eq."${v}"`, `subcategory.eq."${v}"`])
           .join(",");
         const { data } = await supabase
           .from("products")
