@@ -39,10 +39,13 @@ const CategoryPage = () => {
         const subcategoryValues = [activeSub, selectedSubcategory?.name].filter(
           (value): value is string => Boolean(value),
         );
+        const orFilter = subcategoryValues
+          .flatMap((v) => [`category.eq.${v}`, `subcategory.eq.${v}`])
+          .join(",");
         const { data } = await supabase
           .from("products")
           .select("*")
-          .in("category", subcategoryValues)
+          .or(orFilter)
           .eq("is_active", true)
           .order("created_at", { ascending: false });
         return data || [];
