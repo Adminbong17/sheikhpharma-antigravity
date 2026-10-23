@@ -58,16 +58,21 @@ const Footer = () => {
         </div>
         <div>
           <h4 className="mb-3 font-semibold text-foreground">{t("footer.payment_methods")}</h4>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {paymentMethods.length > 0 ? (
               paymentMethods.map((pm) => (
-                <img
+                <div
                   key={pm.id}
-                  src={pm.logo_url}
-                  alt={pm.name}
+                  className="flex h-8 min-w-[48px] max-w-[64px] items-center justify-center rounded border border-border/60 bg-white p-1 shadow-2xs transition-transform hover:scale-105"
                   title={pm.name}
-                  className="h-8 w-auto object-contain rounded"
-                />
+                >
+                  <img
+                    src={pm.logo_url}
+                    alt={pm.name}
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
               ))
             ) : (
               <>

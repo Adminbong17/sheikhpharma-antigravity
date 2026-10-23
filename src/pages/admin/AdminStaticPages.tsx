@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { FileText, Save, ChevronDown, ChevronUp, ArrowLeft, Plus, Trash2, Upload, CreditCard } from "lucide-react";
+import { FileText, Save, ChevronDown, ChevronUp, ArrowLeft, Plus, Trash2, Upload, CreditCard, ArrowUp, ArrowDown } from "lucide-react";
 import DefaultEditor from "react-simple-wysiwyg";
 import { Link } from "react-router-dom";
 import BackButton from "@/components/BackButton";
@@ -56,6 +56,7 @@ const AdminStaticPages = () => {
   const [form, setForm] = useState({ title: "", content: "", is_active: true });
   const [saving, setSaving] = useState(false);
   const [newPmName, setNewPmName] = useState("");
+  const [newPmLogoUrl, setNewPmLogoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,56 +88,91 @@ const AdminStaticPages = () => {
       toast.error("Please enter a name");
       return;
     }
-    if (!fileInputRef.current?.files?.[0]) {
-      toast.error("Please select a logo image");
-      return;
+
+    let logoUrl = newPmLogoUrl.trim();
+
+    if (fileInputRef.current?.files?.[0]) {
+      setUploading(true);
+      const file = fileInputRef.current.files[0];
+      const ext = file.name.split(".").pop();
+      const filePath = `${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("payment-icons")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast.error("Upload failed: " + uploadError.message);
+        setUploading(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("payment-icons")
+        .getPublicUrl(filePath);
+
+      logoUrl = urlData.publicUrl;
     }
 
-    setUploading(true);
-    const file = fileInputRef.current.files[0];
-    const ext = file.name.split(".").pop();
-    const filePath = `${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("payment-icons")
-      .upload(filePath, file);
-
-    if (uploadError) {
-      toast.error("Upload failed: " + uploadError.message);
+    if (!logoUrl) {
+      toast.error("Please select a logo image or enter a logo URL");
       setUploading(false);
       return;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("payment-icons")
-      .getPublicUrl(filePath);
-
+    setUploading(true);
     const { error } = await (supabase.from("payment_methods" as any) as any)
       .insert({
         name: newPmName.trim(),
-        logo_url: urlData.publicUrl,
+        logo_url: logoUrl,
         sort_order: paymentMethods.length,
+        is_active: true,
       });
 
     if (error) toast.error(error.message);
     else {
       toast.success("Payment method added!");
       setNewPmName("");
+      setNewPmLogoUrl("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-footer"] });
     }
     setUploading(false);
   };
 
+  const handleMovePm = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= paymentMethods.length) return;
+
+    const updated = [...paymentMethods];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
+
+    try {
+      for (let i = 0; i < updated.length; i++) {
+        await (supabase.from("payment_methods" as any) as any)
+          .update({ sort_order: i })
+          .eq("id", updated[i].id);
+      }
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-footer"] });
+      toast.success(`Position updated: ${moved.name}`);
+    } catch (err: any) {
+      toast.error("Failed to update position: " + err.message);
+    }
+  };
+
   const handleDeletePm = async (pm: PaymentMethod) => {
-    if (!confirm(`Delete "${pm.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete payment method "${pm.name}"?`)) return;
     const { error } = await (supabase.from("payment_methods" as any) as any)
       .delete()
       .eq("id", pm.id);
     if (error) toast.error(error.message);
     else {
-      toast.success("Deleted!");
+      toast.success(`"${pm.name}" deleted!`);
       queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-footer"] });
     }
   };
 
@@ -145,7 +181,11 @@ const AdminStaticPages = () => {
       .update({ is_active: !pm.is_active })
       .eq("id", pm.id);
     if (error) toast.error(error.message);
-    else queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
+    else {
+      toast.success(pm.is_active ? `"${pm.name}" hidden from footer` : `"${pm.name}" active in footer`);
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-methods-footer"] });
+    }
   };
 
   if (isLoading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
@@ -164,52 +204,103 @@ const AdminStaticPages = () => {
       </div>
 
       {/* Payment Methods Section */}
-      <div className="mb-8 max-w-3xl">
-        <div className="mb-4 flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Payment Methods</h2>
+      <div className="mb-8 max-w-4xl">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Payment Methods ({paymentMethods.length})</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Use Up/Down buttons to re-order icons in the website footer
+          </span>
         </div>
         <Card>
           <CardContent className="pt-6 space-y-4">
             {/* Existing payment methods */}
             {pmLoading ? (
-              <p className="text-sm text-muted-foreground">Loading...</p>
+              <p className="text-sm text-muted-foreground">Loading payment methods...</p>
             ) : paymentMethods.length === 0 ? (
               <p className="text-sm text-muted-foreground">No payment methods added yet.</p>
             ) : (
-              <div className="flex flex-wrap gap-3">
-                {paymentMethods.map((pm) => (
+              <div className="divide-y rounded-lg border">
+                {paymentMethods.map((pm, index) => (
                   <div
                     key={pm.id}
-                    className={`relative group flex flex-col items-center gap-1 rounded-lg border p-3 min-w-[80px] ${
-                      !pm.is_active ? "opacity-50" : ""
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 transition-colors hover:bg-muted/40 ${
+                      !pm.is_active ? "opacity-60 bg-muted/20" : ""
                     }`}
                   >
-                    <img
-                      src={pm.logo_url}
-                      alt={pm.name}
-                      className="h-8 w-8 object-contain"
-                    />
-                    <span className="text-xs text-muted-foreground truncate max-w-[70px]">{pm.name}</span>
-                    <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xs font-mono font-medium text-muted-foreground w-6 text-center shrink-0">
+                        #{index + 1}
+                      </span>
+                      <div className="h-10 w-16 shrink-0 flex items-center justify-center rounded border bg-white p-1 shadow-2xs">
+                        <img
+                          src={pm.logo_url}
+                          alt={pm.name}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{pm.name}</p>
+                        <span
+                          className={`inline-block text-[11px] font-medium ${
+                            pm.is_active ? "text-green-600" : "text-amber-600"
+                          }`}
+                        >
+                          {pm.is_active ? "● Active in Footer" : "○ Hidden from Footer"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                      {/* Position Up / Down */}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        disabled={index === 0}
+                        onClick={() => handleMovePm(index, "up")}
+                        title="Move Up"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        disabled={index === paymentMethods.length - 1}
+                        onClick={() => handleMovePm(index, "down")}
+                        title="Move Down"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+
+                      {/* Active Toggle */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => togglePmActive(pm)}
-                        className={`rounded-full p-1 text-xs ${
+                        className={`h-8 px-2.5 text-xs font-medium ${
                           pm.is_active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-muted text-muted-foreground"
+                            ? "text-green-700 hover:text-green-800 hover:bg-green-50"
+                            : "text-muted-foreground hover:bg-muted"
                         }`}
-                        title={pm.is_active ? "Hide" : "Show"}
+                        title={pm.is_active ? "Click to Hide" : "Click to Show"}
                       >
-                        {pm.is_active ? "✓" : "○"}
-                      </button>
-                      <button
+                        {pm.is_active ? "Visible" : "Hidden"}
+                      </Button>
+
+                      {/* Delete */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => handleDeletePm(pm)}
-                        className="rounded-full bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
-                        title="Delete"
+                        title={`Delete ${pm.name}`}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -224,16 +315,22 @@ const AdminStaticPages = () => {
                   placeholder="e.g. bKash, Visa, Nagad"
                   value={newPmName}
                   onChange={(e) => setNewPmName(e.target.value)}
+                  className="sm:w-1/3"
+                />
+                <Input
+                  placeholder="Logo URL (optional if uploading file)"
+                  value={newPmLogoUrl}
+                  onChange={(e) => setNewPmLogoUrl(e.target.value)}
                   className="flex-1"
                 />
                 <div className="flex gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                  <label className="flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-muted transition-colors whitespace-nowrap">
                     <Upload className="h-4 w-4" />
-                    <span>Logo</span>
+                    <span>Upload Logo</span>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.svg"
                       className="hidden"
                     />
                   </label>
@@ -244,7 +341,7 @@ const AdminStaticPages = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Upload small icon/logo images (PNG recommended, transparent background).
+                Upload image/vector icon (PNG or SVG recommended with transparent background) or paste direct logo URL.
               </p>
             </div>
           </CardContent>
