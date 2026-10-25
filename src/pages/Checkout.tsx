@@ -258,7 +258,14 @@ const Checkout = () => {
 
     setBkashActive(isBkashAllowed);
 
-    if (!isBkashAllowed) {
+    if (isBkashAllowed) {
+      if (paymentMethod === "uddokta_pay" && !uddoktaPayActive) {
+        setPaymentMethod("bkash");
+      }
+      if (codGateway !== "bkash" && !uddoktaPayActive) {
+        setCodGateway("bkash");
+      }
+    } else {
       if (paymentMethod === "bkash") {
         setPaymentMethod(uddoktaPayActive ? "uddokta_pay" : "cod");
       }
@@ -517,33 +524,60 @@ const Checkout = () => {
         const bookingId = booking.id;
         const baseUrl = window.location.origin;
 
-        const { data, error } = await supabase.functions.invoke("uddoktapay-create-charge", {
-          body: {
-            full_name: form.fullName,
-            email: user.email,
-            amount: LAB_SERVICE_CHARGE,
-            order_id: bookingId,
-            payment_type: "lab_service_charge",
-            redirect_url: `${baseUrl}/payment/callback?order_id=${bookingId}&type=lab_service`,
-            cancel_url: `${baseUrl}/payment/callback?order_id=${bookingId}&type=lab_service&cancelled=true`,
-          },
-        });
+        if (bkashActive) {
+          const callbackUrl = `${baseUrl}/bkash/callback`;
+          const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
+            body: {
+              amount: LAB_SERVICE_CHARGE,
+              order_id: bookingId,
+              callback_url: callbackUrl,
+              payment_type: "lab_service",
+            },
+          });
 
-        if (error || !data?.payment_url) {
-          await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", bookingId);
-          throw new Error(data?.error || "Failed to initiate payment");
+          if (error || !data?.ok || !data?.bkashURL) {
+            await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", bookingId);
+            throw new Error(data?.error || "bKash পেমেন্ট শুরু করা যায়নি");
+          }
+
+          sessionStorage.setItem("bkash_order_id", bookingId);
+          sessionStorage.setItem("bkash_payment_type", "lab_service");
+          await markOrderPlaced();
+          window.location.href = data.bkashURL;
+        } else if (uddoktaPayActive) {
+          const { data, error } = await supabase.functions.invoke("uddoktapay-create-charge", {
+            body: {
+              full_name: form.fullName,
+              email: user.email,
+              amount: LAB_SERVICE_CHARGE,
+              order_id: bookingId,
+              payment_type: "lab_service_charge",
+              redirect_url: `${baseUrl}/payment/callback?order_id=${bookingId}&type=lab_service`,
+              cancel_url: `${baseUrl}/payment/callback?order_id=${bookingId}&type=lab_service&cancelled=true`,
+            },
+          });
+
+          if (error || !data?.payment_url) {
+            await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", bookingId);
+            throw new Error(data?.error || "Failed to initiate payment");
+          }
+
+          sessionStorage.setItem("pending_payment_order_id", bookingId);
+          sessionStorage.setItem("pending_payment_type", "lab_booking");
+          await markOrderPlaced();
+          window.location.href = data.payment_url;
+        } else {
+          await markOrderPlaced();
+          clearCart();
+          toast.success("Lab test booking confirmed!");
+          navigate(`/order-confirmation?order_id=${bookingId}&type=lab`);
         }
-
-        sessionStorage.setItem("pending_payment_order_id", bookingId);
-        sessionStorage.setItem("pending_payment_type", "lab_booking");
-        await markOrderPlaced();
-        window.location.href = data.payment_url;
       } else if (paymentMethod === "cod") {
         if (effectiveDeliveryCharge > 0) {
           const orderId = await createOrderInDb();
           const baseUrl = window.location.origin;
 
-          if (codGateway === "bkash") {
+          if (codGateway === "bkash" && bkashActive) {
             const callbackUrl = `${baseUrl}/bkash/callback`;
             const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
               body: {
@@ -562,7 +596,7 @@ const Checkout = () => {
             sessionStorage.setItem("bkash_payment_type", "cod_delivery");
             await markOrderPlaced();
             window.location.href = data.bkashURL;
-          } else {
+          } else if (codGateway === "uddokta_pay" && uddoktaPayActive) {
             const { data, error } = await supabase.functions.invoke("uddoktapay-create-charge", {
               body: {
                 full_name: form.fullName,
@@ -582,6 +616,15 @@ const Checkout = () => {
             sessionStorage.setItem("pending_payment_order_id", orderId);
             await markOrderPlaced();
             window.location.href = data.payment_url;
+          } else {
+            // Neither gateway active for advance delivery charge -> place standard COD order
+            await markOrderPlaced();
+            clearCart();
+            if (marketingSettings?.pixel_enabled) {
+              trackPurchase({ order_id: orderId, value: grandTotal, currency: marketingSettings.default_currency || "BDT" });
+            }
+            toast.success("Order placed successfully! Delivery charge will be collected on delivery.");
+            navigate(`/order-confirmation?order_id=${orderId}`);
           }
         } else {
           const orderId = await createOrderInDb();
@@ -594,6 +637,9 @@ const Checkout = () => {
           navigate(`/order-confirmation?order_id=${orderId}`);
         }
       } else if (paymentMethod === "bkash") {
+        if (!bkashActive) {
+          throw new Error("bKash payment gateway is currently not available");
+        }
         const orderId = await createOrderInDb();
         const baseUrl = window.location.origin;
         const callbackUrl = `${baseUrl}/bkash/callback`;
@@ -617,7 +663,10 @@ const Checkout = () => {
         sessionStorage.setItem("bkash_payment_type", "full_payment");
         await markOrderPlaced();
         window.location.href = data.bkashURL;
-      } else {
+      } else if (paymentMethod === "uddokta_pay") {
+        if (!uddoktaPayActive) {
+          throw new Error("Online payment gateway is currently not active");
+        }
         const orderId = await createOrderInDb();
         const baseUrl = window.location.origin;
 
@@ -642,6 +691,13 @@ const Checkout = () => {
         sessionStorage.setItem("pending_payment_order_id", orderId);
         await markOrderPlaced();
         window.location.href = data.payment_url;
+      } else {
+        // Fallback: place regular COD order
+        const orderId = await createOrderInDb();
+        await markOrderPlaced();
+        clearCart();
+        toast.success("Order placed successfully!");
+        navigate(`/order-confirmation?order_id=${orderId}`);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to place order");
@@ -922,7 +978,7 @@ const Checkout = () => {
                 {/* No gateway active message */}
                 {!bkashActive && !uddoktaPayActive && (
                   <p className="text-sm text-muted-foreground text-center py-2">
-                    {b("কোনো অনলাইন গেটওয়ে সক্রিয় নেই", "No payment gateway currently active")}
+                    {b("ক্যাশ অন ডেলিভারি প্রযোজ্য (পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন)", "Cash on Delivery (Pay when you receive the order)")}
                   </p>
                 )}
               </div>
