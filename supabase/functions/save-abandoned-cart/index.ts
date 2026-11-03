@@ -153,6 +153,27 @@ Deno.serve(async (req) => {
               .from("incomplete_orders")
               .update({ notes: newNotesWithFlag })
               .eq("id", targetId);
+
+            // Also send Telegram notification
+            try {
+              await fetch(`${supabaseUrl}/functions/v1/send-telegram`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+                body: JSON.stringify({
+                  type: event_type === "payment_failed" ? "payment_failed" : "incomplete_order",
+                  data: {
+                    customer_name,
+                    customer_phone,
+                    customer_address,
+                    items,
+                    subtotal,
+                    reason: event_type === "payment_failed" ? "পেমেন্ট ব্যর্থ" : "পেজ ত্যাগ",
+                  },
+                }),
+              });
+            } catch (tgErr) {
+              console.error("Telegram incomplete order notification error:", tgErr);
+            }
           } catch (smsErr) {
             console.error("Incomplete order SMS error:", smsErr);
           }

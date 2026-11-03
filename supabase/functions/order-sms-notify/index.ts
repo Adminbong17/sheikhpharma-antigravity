@@ -119,6 +119,19 @@ Deno.serve(async (req) => {
       await sendSms(settings.admin_phone, event.adminMsg(order), `order_${status}_admin`);
     }
 
+    // Trigger Telegram notification for new order (if enabled in site_settings)
+    if (status === "pending") {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-telegram`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({ type: "new_order", order_id }),
+        });
+      } catch (tgErr) {
+        console.error("Telegram notification error:", tgErr);
+      }
+    }
+
     // 2. Customer SMS
     if (settings.notify_customer && order.customer_phone) {
       await sendSms(order.customer_phone, event.customerMsg(order, siteName), `order_${status}_customer`);

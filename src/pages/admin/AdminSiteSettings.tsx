@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Settings, Upload, X, Image as ImageIcon, Palette, CreditCard, Truck, CheckCircle, XCircle, Loader2, FileText, Store } from "lucide-react";
+import { Settings, Upload, X, Image as ImageIcon, Palette, CreditCard, Truck, CheckCircle, XCircle, Loader2, FileText, Store, Send } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
@@ -98,6 +98,9 @@ type FormState = {
   bkash_password: string;
   bkash_uat_mode: boolean;
   bkash_uat_phones: string;
+  telegram_bot_token: string;
+  telegram_chat_id: string;
+  telegram_enabled: boolean;
 };
 
 const AdminSiteSettings = () => {
@@ -135,6 +138,9 @@ const AdminSiteSettings = () => {
     bkash_password: "",
     bkash_uat_mode: true,
     bkash_uat_phones: "",
+    telegram_bot_token: "",
+    telegram_chat_id: "",
+    telegram_enabled: false,
   });
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -143,6 +149,7 @@ const AdminSiteSettings = () => {
   const [bdCourierMessage, setBdCourierMessage] = useState("");
   const [bdCourierPlan, setBdCourierPlan] = useState<any>(null);
   const [loadingPlan, setLoadingPlan] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
 
 
   useEffect(() => {
@@ -188,6 +195,9 @@ const AdminSiteSettings = () => {
         bkash_app_secret: (settings as any).bkash_app_secret || "",
         bkash_username: (settings as any).bkash_username || "",
         bkash_password: (settings as any).bkash_password || "",
+        telegram_bot_token: (settings as any).telegram_bot_token || "",
+        telegram_chat_id: (settings as any).telegram_chat_id || "",
+        telegram_enabled: (settings as any).telegram_enabled ?? false,
       };
       setForm(newForm);
       // Initialize hex inputs from saved HSL values
@@ -321,6 +331,9 @@ const AdminSiteSettings = () => {
         bkash_password: form.bkash_password || null,
         bkash_uat_mode: form.bkash_uat_mode,
         bkash_uat_phones: form.bkash_uat_phones || null,
+        telegram_bot_token: form.telegram_bot_token?.trim() || null,
+        telegram_chat_id: form.telegram_chat_id?.trim() || null,
+        telegram_enabled: form.telegram_enabled,
       })
       .eq("id", settings.id);
     if (error) toast.error(error.message);
@@ -329,6 +342,28 @@ const AdminSiteSettings = () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
     }
     setSaving(false);
+  };
+
+  const handleTestTelegram = async () => {
+    if (!form.telegram_bot_token || !form.telegram_chat_id) {
+      toast.error("অনুগ্রহ করে Bot Token এবং Chat ID দিন এবং আগে 'Save Settings' এ ক্লিক করুন");
+      return;
+    }
+    setTestingTelegram(true);
+    try {
+      const res = await supabase.functions.invoke("send-telegram", {
+        body: { type: "test" },
+      });
+      if (res.data?.success) {
+        toast.success("টেলিগ্রামে টেস্ট নোটিফিকেশন পাঠানো হয়েছে! আপনার টেলিগ্রাম চেক করুন।");
+      } else {
+        toast.error(res.data?.error || res.data?.reason || "টেস্ট মেসেজ পাঠানো ব্যর্থ হয়েছে");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send test message");
+    } finally {
+      setTestingTelegram(false);
+    }
   };
 
   if (isLoading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Loading...</div>;
@@ -656,6 +691,87 @@ const AdminSiteSettings = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Telegram Bot Notification Settings */}
+      <Collapsible defaultOpen className="mt-6">
+        <Card className="border-sky-200 dark:border-sky-900 shadow-sm">
+          <CardHeader className="cursor-pointer">
+            <CollapsibleTrigger className="flex w-full items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5 text-sky-500" /> Telegram Bot Notifications (টেলিগ্রাম অর্ডার অ্যালার্ট)
+              </CardTitle>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">{form.telegram_enabled ? "Active" : "Inactive"}</span>
+                <Switch
+                  checked={form.telegram_enabled}
+                  onCheckedChange={(v) => { setForm({ ...form, telegram_enabled: v }); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="space-y-5">
+              <div className="rounded-lg bg-sky-50 border border-sky-200 p-4 text-sm text-sky-950 space-y-2 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-200">
+                <p className="font-semibold flex items-center gap-1.5 text-sky-900 dark:text-sky-200">
+                  <CheckCircle className="h-4 w-4 text-sky-600" /> কীভাবে মাত্র ২ মিনিটে আপনার টেলিগ্রাম বট তৈরি ও কানেক্ট করবেন:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-xs sm:text-sm text-sky-900/90 dark:text-sky-200/90">
+                  <li>টেলিগ্রামে <b>@BotFather</b> সার্চ করে মেসেজ দিন: <code>/newbot</code></li>
+                  <li>বটের একটি নাম (যেমন <i>Sheikh Pharma Alert</i>) এবং ইউজারনেম দিন (যেমন <i>sheikhpharma_alert_bot</i>)।</li>
+                  <li>BotFather আপনাকে একটি <b>HTTP API Token</b> দেবে। সেই টোকেনটি কপি করে নিচের <b>Telegram Bot Token</b> বক্সে বসান।</li>
+                  <li>আপনার তৈরি করা বটে গিয়ে একবার <b>START</b> বাটনে চাপুন।</li>
+                  <li>এরপর টেলিগ্রামে <b>@userinfobot</b> সার্চ করে আপনার ব্যক্তিগত <b>Id</b> নম্বরটি (Chat ID) সংগ্রহ করুন (বা গ্রুপের Chat ID নিন)।</li>
+                  <li>নিচে Chat ID বসিয়ে <b>Save Settings</b> এ ক্লিক করুন এবং <b>Send Test Notification</b> চাপ দিয়ে টেস্ট করুন!</li>
+                </ol>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Telegram Bot Token</Label>
+                  <Input
+                    type="password"
+                    value={form.telegram_bot_token}
+                    onChange={(e) => setForm({ ...form, telegram_bot_token: e.target.value })}
+                    placeholder="7123456789:AAHk1_example_token_here..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    @BotFather থেকে প্রাপ্ত সিক্রেট HTTP API Token
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Telegram Chat ID</Label>
+                  <Input
+                    value={form.telegram_chat_id}
+                    onChange={(e) => setForm({ ...form, telegram_chat_id: e.target.value })}
+                    placeholder="123456789 (বা গ্রুপের জন্য -100xxxxxxxxx)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    আপনার পার্সোনাল টেলিগ্রাম আইডি বা গ্রুপ আইডি (যেখানে নোটিফিকেশন যাবে)
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={testingTelegram || !form.telegram_bot_token || !form.telegram_chat_id}
+                  onClick={handleTestTelegram}
+                  className="gap-2 border-sky-400 text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950 font-medium"
+                >
+                  {testingTelegram ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Send Test Notification (টেস্ট মেসেজ পাঠান)
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  (টোকেন বা আইডি পরিবর্তন করলে আগে নিচের Save Settings বাটনে চাপ দিন)
+                </span>
               </div>
             </CardContent>
           </CollapsibleContent>
