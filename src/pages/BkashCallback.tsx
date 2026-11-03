@@ -18,22 +18,74 @@ const BkashCallback = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const { data: marketingSettings } = useMarketingSettings();
 
+  const recordFailedBkashPayment = async (targetOrderId: string, reason: string, isLab: boolean) => {
+    try {
+      if (isLab) {
+        const { data: booking } = await (supabase.from("lab_test_bookings" as any) as any)
+          .select("*")
+          .eq("id", targetOrderId)
+          .maybeSingle();
+        if (booking && booking.customer_phone) {
+          await supabase.functions.invoke("save-abandoned-cart", {
+            body: {
+              customer_name: booking.customer_name,
+              customer_phone: booking.customer_phone,
+              customer_address: booking.customer_address,
+              customer_division: booking.customer_division,
+              items: booking.items || [],
+              subtotal: booking.total || 0,
+              notes: `বিকাশ পেমেন্ট ব্যর্থ: ${reason}`,
+              notify_admin: true,
+              event_type: "payment_failed",
+            },
+          });
+        }
+        await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", targetOrderId);
+      } else {
+        const { data: ord } = await supabase
+          .from("orders")
+          .select("*, order_items(*)")
+          .eq("id", targetOrderId)
+          .maybeSingle();
+        if (ord && ord.customer_phone) {
+          await supabase.functions.invoke("save-abandoned-cart", {
+            body: {
+              customer_name: ord.customer_name,
+              customer_phone: ord.customer_phone,
+              customer_address: ord.customer_address,
+              customer_division: ord.customer_division,
+              customer_zilla: ord.customer_zilla,
+              customer_upazilla: ord.customer_upazilla,
+              items: (ord.order_items || []).map((i: any) => ({
+                name: i.product_name,
+                price: i.price,
+                quantity: i.quantity,
+              })),
+              subtotal: ord.total,
+              notes: `বিকাশ পেমেন্ট ব্যর্থ: ${reason}`,
+              notify_admin: true,
+              event_type: "payment_failed",
+            },
+          });
+        }
+        await supabase.from("order_items").delete().eq("order_id", targetOrderId);
+        await supabase.from("orders").delete().eq("id", targetOrderId);
+      }
+    } catch (e) {
+      console.error("Failed to record failed bKash payment:", e);
+    }
+  };
+
   useEffect(() => {
     const paymentID = searchParams.get("paymentID");
     const bkashStatus = searchParams.get("status");
     const orderId = sessionStorage.getItem("bkash_order_id");
     const paymentType = sessionStorage.getItem("bkash_payment_type") || "full_payment";
+    const isLab = paymentType === "lab_service";
 
     if (!paymentID || bkashStatus !== "success" || !orderId) {
       if (orderId) {
-        (async () => {
-          if (paymentType === "lab_service") {
-            await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", orderId);
-          } else {
-            await supabase.from("order_items").delete().eq("order_id", orderId);
-            await supabase.from("orders").delete().eq("id", orderId);
-          }
-        })();
+        recordFailedBkashPayment(orderId, bkashStatus === "cancel" ? "গ্রাহক বাতিল করেছেন" : "পেমেন্ট ব্যর্থ হয়েছে", isLab);
       }
       sessionStorage.removeItem("bkash_order_id");
       sessionStorage.removeItem("bkash_payment_type");
@@ -68,11 +120,8 @@ const BkashCallback = () => {
         } else {
           const statusCode = res.data?.statusCode || "";
           const statusMessage = res.data?.statusMessage || "";
-          if (paymentType === "lab_service") {
-            await (supabase.from("lab_test_bookings" as any) as any).delete().eq("id", orderId);
-          } else {
-            await supabase.from("order_items").delete().eq("order_id", orderId);
-            await supabase.from("orders").delete().eq("id", orderId);
+          if (orderId) {
+            await recordFailedBkashPayment(orderId, statusMessage || "পেমেন্ট ভেরিফাই করা যায়নি", isLab);
           }
           sessionStorage.removeItem("bkash_order_id");
           sessionStorage.removeItem("bkash_payment_type");
@@ -89,6 +138,9 @@ const BkashCallback = () => {
           toast.error(statusMessage || "bKash পেমেন্ট ভেরিফাই করা যায়নি");
         }
       } catch {
+        if (orderId) {
+          await recordFailedBkashPayment(orderId, "সিস্টেম এক্সেপশন", isLab);
+        }
         sessionStorage.removeItem("bkash_order_id");
         sessionStorage.removeItem("bkash_payment_type");
         setStatus("failed");

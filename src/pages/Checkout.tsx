@@ -139,7 +139,7 @@ const Checkout = () => {
   useEffect(() => { upazillaRef.current = selectedUpazilla; }, [selectedUpazilla]);
   useEffect(() => { areaRef.current = selectedArea; }, [selectedArea]);
 
-  const saveAbandonedCart = useCallback(async () => {
+  const saveAbandonedCart = useCallback(async (notifyAdmin: boolean = false, eventType?: string) => {
     if (orderPlacedRef.current) return;
     const f = formRef.current;
     // Only save if at least one field is filled
@@ -165,6 +165,8 @@ const Checkout = () => {
         subtotal: totalPrice,
         notes: f.notes || null,
         incomplete_order_id: abandonedCartIdRef.current,
+        notify_admin: notifyAdmin,
+        event_type: eventType,
       };
 
       const { data } = await supabase.functions.invoke("save-abandoned-cart", { body: payload });
@@ -174,17 +176,17 @@ const Checkout = () => {
     } catch {}
   }, [items, totalPrice, user]);
 
-  // Auto-save on field change (debounced) and on leave
+  // Auto-save on field change (debounced) — SILENT (no SMS while typing)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (form.fullName || form.phone || form.address) {
-        saveAbandonedCart();
+        saveAbandonedCart(false);
       }
     }, 3000);
     return () => clearTimeout(timer);
   }, [form.fullName, form.phone, form.address, selectedDivision, selectedZilla, selectedUpazilla, saveAbandonedCart]);
 
-  // Save on page leave
+  // Save and notify when user actually leaves the page or closes the tab without completing order
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (orderPlacedRef.current) return;
@@ -207,6 +209,8 @@ const Checkout = () => {
         subtotal: totalPrice,
         notes: f.notes || null,
         incomplete_order_id: abandonedCartIdRef.current,
+        notify_admin: true,
+        event_type: "page_exit",
       };
 
       // Use sendBeacon for reliable save on page close
@@ -215,8 +219,17 @@ const Checkout = () => {
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [items, totalPrice, user]);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Also notify when user navigates away within the app without placing order
+      if (!orderPlacedRef.current) {
+        const f = formRef.current;
+        if (f.phone || f.fullName) {
+          saveAbandonedCart(true, "page_exit");
+        }
+      }
+    };
+  }, [items, totalPrice, user, saveAbandonedCart]);
 
   // Delete abandoned cart entry if order is successfully placed
   const markOrderPlaced = useCallback(async () => {
