@@ -416,23 +416,30 @@ const Checkout = () => {
 
     if (orderErr) throw orderErr;
 
+    const isUUID = (str?: string | null): boolean => {
+      if (!str) return false;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    };
+
     const orderItems = items.map((item) => ({
       order_id: order.id,
-      product_id: item.id.startsWith("lab-") ? null : item.id,
+      product_id: isUUID(item.id) ? item.id : null,
       quantity: item.quantity,
       price: item.price,
       product_name: item.name,
       variant_info: item.id.startsWith("lab-") 
         ? { lab_test: true, test_name: item.name } 
-        : (item.variantLabel ? { variant: item.variantLabel } : undefined),
+        : (item.id.startsWith("rx-")
+          ? { prescription_medicine: true, rx_id: item.id, variant: item.variantLabel || undefined }
+          : (item.variantLabel ? { variant: item.variantLabel } : undefined)),
     }));
 
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) throw itemsErr;
 
-    // Increment preorder_count for pre-order products (skip lab tests)
+    // Increment preorder_count for pre-order products (skip lab tests and non-UUID items)
     if (!isLabTestOrder) {
-      const uniqueProductIds = [...new Set(items.map(i => i.id))];
+      const uniqueProductIds = [...new Set(items.map(i => i.id).filter(isUUID))];
       for (const pid of uniqueProductIds) {
         const { data: prod } = await supabase.from("products").select("is_preorder, stock").eq("id", pid).single();
         if (prod && isEffectivePreorder(prod)) {
