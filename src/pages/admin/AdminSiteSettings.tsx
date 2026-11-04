@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,8 +103,21 @@ type FormState = {
 };
 
 const AdminSiteSettings = () => {
-  const { data: settings, isLoading } = useSiteSettings();
   const queryClient = useQueryClient();
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["admin-site-settings"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("site_settings" as any) as any)
+        .select("*")
+        .limit(1)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    refetchOnMount: "always",
+    staleTime: 0,
+    gcTime: 0,
+  });
   const [hexInputs, setHexInputs] = useState<Record<string, string>>({});
   const [form, setForm] = useState<FormState>({
     site_name: "", site_title: "", office_address: "", office_phone: "", office_email: "", logo_url: "", favicon_url: "",
@@ -335,11 +347,15 @@ const AdminSiteSettings = () => {
         telegram_chat_id: form.telegram_chat_id?.trim() || null,
         telegram_enabled: form.telegram_enabled,
       })
-      .eq("id", settings.id);
-    if (error) toast.error(error.message);
-    else {
+    if (error) {
+      toast.error(error.message);
+    } else {
       toast.success("Site settings updated!");
+      queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] });
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      try {
+        localStorage.removeItem("sheikhpharma_site_settings");
+      } catch {}
     }
     setSaving(false);
   };

@@ -15,7 +15,39 @@ export interface SiteSettings {
   border_color: string | null;
   muted_color: string | null;
   is_multivendor: boolean | null;
+  office_address?: string | null;
+  office_phone?: string | null;
+  office_email?: string | null;
+  uddoktapay_base_url?: string | null;
+  uddoktapay_api_key?: string | null;
+  uddoktapay_active?: boolean | null;
+  cod_delivery_charge?: number | null;
+  steadfast_api_key?: string | null;
+  steadfast_secret_key?: string | null;
+  bdcourier_api_key?: string | null;
+  carrybee_client_id?: string | null;
+  carrybee_client_secret?: string | null;
+  carrybee_client_context?: string | null;
+  carrybee_store_id?: string | null;
+  pathao_client_id?: string | null;
+  pathao_client_secret?: string | null;
+  pathao_username?: string | null;
+  pathao_password?: string | null;
+  pathao_store_id?: string | null;
+  pathao_base_url?: string | null;
+  bkash_active?: boolean | null;
+  bkash_base_url?: string | null;
+  bkash_app_key?: string | null;
+  bkash_app_secret?: string | null;
+  bkash_username?: string | null;
+  bkash_password?: string | null;
+  bkash_uat_mode?: boolean | null;
+  bkash_uat_phones?: string | null;
+  telegram_bot_token?: string | null;
+  telegram_chat_id?: string | null;
+  telegram_enabled?: boolean | null;
   updated_at: string;
+  [key: string]: any;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
